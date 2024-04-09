@@ -152,6 +152,12 @@ export async function fireTask(type, orgID, {count, prompt, refImage, extraParam
             task.count = 1;
             task.extra_params = extraParams;
             break;
+        case "layering":
+            task.credits = 2 * count;
+            task.ref_image = refImage;
+            task.count = 1;
+            task.extra_params = extraParams;
+            break;
         default:
             console.log("invalid type")
             return;
