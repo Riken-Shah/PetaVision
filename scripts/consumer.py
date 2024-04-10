@@ -306,3 +306,48 @@ def get_task_info_from_event(event):
 
 # Listen for changes in the /tasks node
 tasks_stream = db_ref.listen(on_task_change)
+
+# layering("z5STOLemjohGH5bNySjygSg40W73", "https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F101_cutout.png?alt=media&token=d2ad1b0b-2cba-40b0-904b-d9af3c21cae8", {"dominant_colors": [
+#     {
+#         "alpha": 1,
+#         "blue": 160,
+#         "green": 178,
+#         "red": 220
+#     },
+#     {
+#         "alpha": 1,
+#         "blue": 51,
+#         "green": 115,
+#         "red": 200
+#     },
+#     {
+#         "alpha": 1,
+#         "blue": 114,
+#         "green": 121,
+#         "red": 199
+#     },
+#     {
+#         "alpha": 1,
+#         "blue": 118,
+#         "green": 136,
+#         "red": 146
+#     },
+#     {
+#         "alpha": 1,
+#         "blue": 79,
+#         "green": 179,
+#         "red": 216
+#     },
+#     {
+#         "alpha": 1,
+#         "blue": 87,
+#         "green": 71,
+#         "red": 116
+#     },
+#     {
+#         "alpha": 1,
+#         "blue": 220,
+#         "green": 228,
+#         "red": 247
+#     }
+# ]})

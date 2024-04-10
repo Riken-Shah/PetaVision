@@ -410,7 +410,8 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
 
     # Create CSV File which describes test images path.
     csv_df = pd.DataFrame()
-    csv_df = csv_df.append(pd.Series([f"{processing_dir}/{final_img_name}"]), ignore_index=True)
+    # csv_df = csv_df.append(pd.Series([f"{processing_dir}/{final_img_name}"]), ignore_index=True)
+    csv_df = pd.concat([csv_df, pd.DataFrame([f"{processing_dir}/{final_img_name}"])], ignore_index=True)
     csv_path = f'{processing_dir}/{run_name}.csv'
     pallete_csv_path = f'{processing_dir}/{run_name}_pallete.csv'
     csv_df.to_csv(csv_path, index=False, header=False)
@@ -418,7 +419,7 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
     # Create color palettes csv
     # center = get_color_pallete(os.path.join(test_imgs_dir, img_name),num_primary_color)
     # # Create a DataFrame to store the color palettes
-    palette_df = pd.DataFrame()
+    # palette_df = pd.DataFrame()
     # # Append the color palette to the DataFrame
     manual_colors = []
     # for i in range(0, len(center), 3):
@@ -442,10 +443,14 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
     #
     # palette_df = palette_df.append(pd.Series([math.floor(i) for i in center]), ignore_index=True)
     # palette_df = palette_df.append(pd.Series([math.floor(i) for i in center]), ignore_index=True)
-    palette_df = palette_df.append(pd.Series(series), ignore_index=True)
-    palette_df = palette_df.append(pd.Series(series), ignore_index=True)
+    # palette_df = palette_df.append(pd.Series(series), ignore_index=True)
+    # palette_df = pd.concat([palette_df, pd.Series(series)], ignore_index=True)
+    # palette_df = pd.concat([palette_df, pd.Series(series)], ignore_index=True)
     # # Save the DataFrame to a CSV file
-    palette_df.to_csv(pallete_csv_path, index=False, header=False)
+    # palette_df.to_csv(pallete_csv_path, index=False, header=False)
+    with open(pallete_csv_path, mode="w") as pallete_file:
+        line = ",".join(map(str, series))
+        pallete_file.write(line + "\n" + line)
 
     # Create Output Dir
     create_dir_if_not_exists(f'{processing_dir}/results/%s/%s' % (run_name, final_img_name))

@@ -19,3 +19,4 @@ scripts/firebase_admin.json
 
 scripts/layering/runs/**
 node_modules
+scripts/generate_psd.js
