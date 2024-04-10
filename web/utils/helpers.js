@@ -172,6 +172,7 @@ export async function fireTask(type, orgID, {count, prompt, refImage, extraParam
 //         Also insert to realtime db
     task.firestore_id = taskID
     await set(ref(realtimeDB, `tasks/${auth.currentUser.uid}`), task)
+    return taskID
 }
 
 export async function getCurrentTasks(setTask) {

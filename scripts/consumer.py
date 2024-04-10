@@ -233,7 +233,7 @@ def upscale(firestore_id, ref_image, extra_params):
 
 
 def layering(firestore_id, ref_image, extra_params):
-    temp_folder = "scripts/layering/temp"
+    temp_folder = "layering/runs/temp"
     img_name = download_img_to_folder(ref_image, temp_folder, firestore_id)
 
     psd_path = perform_layering(temp_folder, img_name, extra_params["dominant_colors"])

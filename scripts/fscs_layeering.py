@@ -35,9 +35,10 @@ import os
 import time
 
 ### Define Variables
+models_dir = "layering/models"
 test_imgs_dir = "layering/runs"
-output_dir = "layering/outputs"
-processing_dir = "layering"
+output_dir = "layering/run/outputs"
+processing_dir = "layering/runs"
 num_primary_color = 7
 resize_scale_factor = 1
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -378,21 +379,12 @@ import pandas as pd
 import math
 from PIL import Image
 
-path_mask_generator = f'{processing_dir}/models' + '/mask_generator.pth'
-path_residue_predictor = f'{processing_dir}/models' + '/residue_predictor.pth'
+path_mask_generator = models_dir + '/mask_generator.pth'
+path_residue_predictor = models_dir + '/residue_predictor.pth'
 
 # define model
-mask_generator = MaskGenerator(num_primary_color).to(device)
-residue_predictor = ResiduePredictor(num_primary_color).to(device)
-
-# load params
-#   %pwd
-mask_generator.load_state_dict(torch.load(path_mask_generator, map_location=device))
-residue_predictor.load_state_dict(torch.load(path_residue_predictor, map_location=device))
-
-# eval mode
-mask_generator.eval()
-residue_predictor.eval()
+mask_generator = None
+residue_predictor = None
 
 def perform_layering(test_imgs_dir, img_name, dominant_colors):
     # for img_name in os.listdir(test_imgs_dir):
@@ -439,6 +431,9 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
         series.append(dominant_color["green"])
         series.append(dominant_color["blue"])
 
+    choose_colors_max = len(manual_colors)
+    print("Max: ", choose_colors_max)
+
 
 
     manual_colors = np.array(manual_colors) / 255.0
@@ -458,7 +453,7 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
     # path_mask_generator = f'{processing_dir}/models' + '/mask_generator.pth'
     # path_residue_predictor = f'{processing_dir}/models' + '/residue_predictor.pth'
 
-    test_dataset = MyDataset(csv_path, pallete_csv_path, num_primary_color, mode='test')
+    test_dataset = MyDataset(csv_path, pallete_csv_path, choose_colors_max, mode='test')
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=1,
@@ -467,17 +462,18 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
     )
 
     # # define model
-    # mask_generator = MaskGenerator(num_primary_color).to(device)
-    # residue_predictor = ResiduePredictor(num_primary_color).to(device)
+    global mask_generator, residue_predictor
+    mask_generator = MaskGenerator(choose_colors_max).to(device)
+    residue_predictor = ResiduePredictor(choose_colors_max).to(device)
     #
     # # load params
     # #   %pwd
-    # mask_generator.load_state_dict(torch.load(path_mask_generator, map_location=device))
-    # residue_predictor.load_state_dict(torch.load(path_residue_predictor, map_location=device))
+    mask_generator.load_state_dict(torch.load(path_mask_generator, map_location=device))
+    residue_predictor.load_state_dict(torch.load(path_residue_predictor, map_location=device))
     #
     # # eval mode
-    # mask_generator.eval()
-    # residue_predictor.eval()
+    mask_generator.eval()
+    residue_predictor.eval()
 
     generate_layers(run_name, final_img_name, test_loader, manual_colors)
 

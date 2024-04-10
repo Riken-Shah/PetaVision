@@ -1,0 +1,9 @@
+{
+	"dependencies": {
+		"ag-psd": "^19.0.1",
+		"canvas": "^2.11.2",
+		"color-supreme": "^0.1.4",
+		"image-size": "^1.1.1",
+		"pixel-paradise": "^0.0.1"
+	}
+}

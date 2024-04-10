@@ -44,7 +44,7 @@ export default function Img2Img({orgUser,startLoading, endLoading, isDisabled}) 
         startLoading();
         console.log("uploading image")
         const imageURL = await fileUpload("", blob.name, blob)
-        setUploadedURL(uploadedURL)
+        setUploadedURL(imageURL)
         console.log(imageURL)
 
         // Step 1: Create a FileReader object
@@ -68,9 +68,12 @@ export default function Img2Img({orgUser,startLoading, endLoading, isDisabled}) 
 
     };
 
-    const submitTask = function () {
-        fireTask("layering", orgUser.org_id, {
-            count: 1, refImage: imageURL,
+    const submitTask = async function () {
+        const dominatColorsInRGB = dominantColors.map((x) => hexToRgb(x))
+        await fireTask("layering", orgUser.org_id, {
+            count: 1, refImage: uploadedURL, extraParams: {
+                dominant_colors: dominatColorsInRGB
+            }
         });
     }
 

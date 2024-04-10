@@ -16,6 +16,7 @@ import {GalleryIcon} from "./GalleryIcon";
 import {MusicIcon} from "./MusicIcon";
 import { getCurrentTasks, getOrgUser, getRoles, getStyles} from "../../../utils/helpers";
 import Img2Img from "@/app/gen/components/Img2Img";
+import Layering from "@/app/gen/components/Layering";
 import { onAuthStateChanged} from "firebase/auth";
 import {auth, toggleAnalytics} from "../../../utils/firebase";
 import Images from "@/app/gen/components/Images";
@@ -106,7 +107,7 @@ export default function App() {
                         </div>
                     }
                 >
-<Text2Img orgUser={orgUser} isDisabled={isDisabled} styles={styles} />
+                <Text2Img orgUser={orgUser} isDisabled={isDisabled} styles={styles} />
                 </Tab>
                 <Tab
                     key="upscale"
@@ -118,6 +119,17 @@ export default function App() {
                     }
                 >
                     <Upscale isDisabled={isDisabled}  orgUser={orgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>
+                </Tab>
+                <Tab
+                    key="layering"
+                    title={
+                        <div className="flex items-center space-x-2">
+                            <GalleryIcon/>
+                            <span>Layering</span>
+                        </div>
+                    }
+                >
+                    <Layering isDisabled={isDisabled}  orgUser={orgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>
                 </Tab>
             </Tabs>
             {activeTask && <Images task={activeTask}/>}
