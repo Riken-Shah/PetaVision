@@ -1,7 +1,10 @@
+import os
+
 import firebase_admin
 from firebase_admin import credentials, db, storage, firestore
 import requests
 import json
+from fscs_layeering import perform_layering
 import base64
 import time  # Added for simulating delay
 
@@ -24,6 +27,7 @@ firestore_db = firestore.client()
 # Reference to Firebase Storage
 bucket = storage.bucket()
 
+
 def increment_consumer_count():
     current_count = consumers_ref.get()
     if current_count is None:
@@ -33,8 +37,10 @@ def increment_consumer_count():
     consumers_ref.set(current_count)
     print(f"Consumer count incremented: {current_count}")
 
+
 def update_task_state(task_id, state):
     db_ref.child(task_id).update({'status': state})
+
 
 def simulate_api_call():
     # Simulate API call with a delay
@@ -43,9 +49,11 @@ def simulate_api_call():
 
     # Dummy response for testing
     return {
-        'images': ['https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F1639%20DM.jpg?alt=media&token=41ea01a3-3668-4d6a-87de-17567092ccd8',
-                   'https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F1639%20DM.jpg?alt=media&token=41ea01a3-3668-4d6a-87de-17567092ccd8']
+        'images': [
+            'https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F1639%20DM.jpg?alt=media&token=41ea01a3-3668-4d6a-87de-17567092ccd8',
+            'https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F1639%20DM.jpg?alt=media&token=41ea01a3-3668-4d6a-87de-17567092ccd8']
     }
+
 
 def upload_image(base64_string, firestore_id, index):
     # Decode the base64 string to get the image content
@@ -63,11 +71,30 @@ def upload_image(base64_string, firestore_id, index):
 
     return blob.public_url
 
+def upload_psd_from_path(psd_path, firestore_id):
+    with open(psd_path, 'rb') as psd_file:
+        psd_content = psd_file.read()
+
+    psd_filename = f"tasks/{firestore_id}/{os.path.basename(psd_path)}"
+    blob = bucket.blob(psd_filename)
+
+    # Set mimetype to 'image/vnd.adobe.photoshop' for PSD files
+    blob.upload_from_string(psd_content, content_type='image/vnd.adobe.photoshop')
+
+    # Set the ACL to make the PSD file publicly accessible
+    blob.acl.all().grant_read()
+    blob.acl.save()
+
+    return blob.public_url
+
+
+
 def update_final_status_in_firestore(task_id, firestore_id, success):
     if firestore_id:
         # Assuming you have a 'tasks' collection in Firestore
         firestore_ref = firestore_db.collection('tasks').document(firestore_id)
         firestore_ref.update({'status': 'completed' if success else "failed"})
+
 
 def deduct_credits(org_id, deducted_credits=1):
     if org_id:
@@ -78,11 +105,13 @@ def deduct_credits(org_id, deducted_credits=1):
         new_credits = current_credits - deducted_credits
         org_ref.update({'credits': new_credits})
 
+
 AUTOMATIC1111_URL = "https://11d2-34-123-151-87.ngrok-free.app/"
+
 
 def text2img(firestore_id, prompt, negative_prompt, count, extra_params):
     headers = {'Content-Type': 'application/json'}
-    payload ={
+    payload = {
         "prompt": prompt,
         "sampler_name": "DPM++ 2M",
         "batch_size": count,
@@ -109,6 +138,7 @@ def text2img(firestore_id, prompt, negative_prompt, count, extra_params):
     img_urls = [upload_image(img_url, firestore_id, i) for i, img_url in enumerate(images)]
     return img_urls
 
+
 def convert_img_to_base64(img_url):
     # Fetch the image content from the URL
     img_response = requests.get(img_url)
@@ -122,9 +152,25 @@ def convert_img_to_base64(img_url):
         raise Exception(f"Failed to fetch image from {img_url}. Status code: {img_response.status_code}")
 
 
+def download_img_to_folder(img_url, folder_name, name):
+    img_response = requests.get(img_url)
+    if img_response.status_code == 200:
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+        img_name = f"{name}.jpeg"
+        with open(f'{folder_name}/{img_name}', 'wb') as img_file:
+            img_file.write(img_response.content)
+        print(f"Image downloaded successfully to '{folder_name}/{img_name}'.")
+        return img_name
+    else:
+        print("Failed to download image. Status code:", img_response.status_code)
+
+    return ""
+
+
 def img2img(firestore_id, ref_image, prompt, negative_prompt, count, extra_params):
     headers = {'Content-Type': 'application/json'}
-    payload ={
+    payload = {
         "prompt": prompt,
         "sampler_name": "DPM++ 2M",
         "batch_size": count,
@@ -152,6 +198,7 @@ def img2img(firestore_id, ref_image, prompt, negative_prompt, count, extra_param
     # Upload images to Firebase Storage
     img_urls = [upload_image(img_url, firestore_id, i) for i, img_url in enumerate(images)]
     return img_urls
+
 
 def upscale(firestore_id, ref_image, extra_params):
     headers = {'Content-Type': 'application/json'}
@@ -185,7 +232,15 @@ def upscale(firestore_id, ref_image, extra_params):
     return img_urls
 
 
+def layering(firestore_id, ref_image, extra_params):
+    temp_folder = "scripts/layering/temp"
+    img_name = download_img_to_folder(ref_image, temp_folder, firestore_id)
 
+    psd_path = perform_layering(temp_folder, img_name, extra_params["dominant_colors"])
+    # Upload images to Firebase Storage
+    psd_uploaded_path = upload_psd_from_path(psd_path, firestore_id)
+    print(psd_uploaded_path)
+    return psd_uploaded_path
 
 
 def process_task(task_id, task):
@@ -198,15 +253,17 @@ def process_task(task_id, task):
         # dummy_response = simulate_api_call()
         img_urls = []
         if task.get("type") == "text2img":
-            img_urls = text2img(task.get("firestore_id"), task.get("prompt"), "blurry, low quality", task.get("count"), task.get("extra_params"))
+            img_urls = text2img(task.get("firestore_id"), task.get("prompt"), "blurry, low quality", task.get("count"),
+                                task.get("extra_params"))
         elif task.get("type") == "img2img":
-            img_urls = img2img(task.get("firestore_id"), task.get("ref_image"), "floral", "blurry, low quality", task.get("count"), task.get("extra_params"))
+            img_urls = img2img(task.get("firestore_id"), task.get("ref_image"), "floral", "blurry, low quality",
+                               task.get("count"), task.get("extra_params"))
         elif task.get("type") == "upscale":
             img_urls = upscale(task.get("firestore_id"), task.get("ref_image"), task.get("extra_params"))
+        elif task.get("type") == "layering":
+            img_urls = [layering(task.get("firestore_id"), task.get("ref_image"), task.get("extra_params"))]
         else:
             raise Exception("unsupported type")
-
-
 
         # Update Realtime Database with image links
         db_ref.child(task_id).child('results').set(img_urls)
@@ -225,6 +282,7 @@ def process_task(task_id, task):
         update_task_state(task_id, 'failed')
         update_final_status_in_firestore(task_id, task.get("firestore_id"), False)
 
+
 # Listen for changes in the /tasks node
 def on_task_change(event):
     try:
@@ -233,6 +291,7 @@ def on_task_change(event):
             process_task(task_id, task)
     except Exception as e:
         print(f"Error processing task change: {e}")
+
 
 def get_task_info_from_event(event):
     if len(event.path) == 1:
@@ -243,6 +302,7 @@ def get_task_info_from_event(event):
         task = event.data
 
     return task_id, task
+
 
 # Listen for changes in the /tasks node
 tasks_stream = db_ref.listen(on_task_change)

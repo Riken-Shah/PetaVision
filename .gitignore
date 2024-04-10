@@ -15,3 +15,6 @@ scripts/__pycache__/
 scripts/*.pyc
 
 scripts/firebase_admin.json
+
+scripts/layering/outputs
+scripts/layering/results/*
