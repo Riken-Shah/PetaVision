@@ -33,12 +33,12 @@ from mydataset import MyDataset
 import cv2
 import os
 import time
-
+import pathlib
 ### Define Variables
-models_dir = "layering/models"
-test_imgs_dir = "layering/runs"
-output_dir = "layering/run/outputs"
-processing_dir = "layering/runs"
+models_dir = pathlib.Path("layering", "models")
+test_imgs_dir = pathlib.Path("layering", "runs")
+output_dir = pathlib.Path("layering", "runs", "outputs")
+processing_dir =  pathlib.Path("layering", "runs")
 num_primary_color = 7
 resize_scale_factor = 1
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -232,14 +232,13 @@ def generate_layers(run_name, img_name, test_loader, manual_colors):
                 # batchsizeは１で計算されているはず．それぞれ保存する．
                 save_layer_number = 0
                 save_image(primary_color_layers[save_layer_number, :, :, :, :],
-                           f'{processing_dir}/results/%s/%s/test' % (
-                           run_name, img_name) + '_img-%02d_primary_color_layers.png' % batch_idx)
+                           pathlib.Path(processing_dir, "results", run_name, img_name + '_img-%02d_primary_color_layers.png' % batch_idx))
                 save_image(reconst_img[save_layer_number, :, :, :].unsqueeze(0),
-                           f'{processing_dir}/results/%s/%s/test' % (
-                           run_name, img_name) + '_img-%02d_reconst_img.png' % batch_idx)
+                           pathlib.Path(processing_dir, "results", run_name,
+                                        img_name + '_img-%02d_reconst_img.png' % batch_idx))
                 save_image(target_img[save_layer_number, :, :, :].unsqueeze(0),
-                           f'{processing_dir}/results/%s/%s/test' % (
-                           run_name, img_name) + '_img-%02d_target_img.png' % batch_idx)
+                           pathlib.Path(processing_dir, "results", run_name,
+                                        img_name + '_img-%02d_target_img.png' % batch_idx))
 
                 # RGBAの４chのpngとして保存する
                 RGBA_layers = torch.cat((pred_unmixed_rgb_layers, processed_alpha_layers),
@@ -249,8 +248,10 @@ def generate_layers(run_name, img_name, test_loader, manual_colors):
                 # ln ごとに結果を保存する
                 for i in range(len(RGBA_layers)):
                     save_image(RGBA_layers[i, :, :, :],
-                               f'{processing_dir}/results/%s/%s/layers/img-%02d_layer-%02d.png' % (
-                               run_name, img_name, batch_idx, i))
+                               pathlib.Path(processing_dir, "results", run_name,
+                                            img_name, "layers", "img-%02d_layer-%02d.png" % (batch_idx,i)))
+
+
                 print(f'Saved to {processing_dir}/results/%s/%s/...' % (run_name, img_name))
 
             if False:
@@ -275,13 +276,15 @@ def generate_layers(run_name, img_name, test_loader, manual_colors):
 
 def generate_psd(index):
     # !npm install ag-psd canvas image-size
-    psd_path = f"{processing_dir}/results/sample/{index}.jpeg/output.psd"
+
+    psd_path = pathlib.Path(processing_dir, "results", "sample", index + ".jpeg", "output.psd")
+    outputFolder = pathlib.Path(processing_dir, "results", "sample", index + ".jpeg", "layers")
     js_code = """
   const fs = require('fs');
   const { createCanvas, loadImage } = require('canvas');
   const { initializeCanvas, writePsd, readPsd } = require('ag-psd');
   const { promisify } = require('util');
-  const sizeOf = promisify(require('image-size'));""" + f"""const psdFilePath = '{psd_path}';""" + f"""const outputFolder = '{processing_dir}/results/sample/{index}.jpeg/layers';""" + """
+  const sizeOf = promisify(require('image-size'));""" + f"""const psdFilePath = '{psd_path}';""" + f"""const outputFolder = '{outputFolder}';""" + """
   async function generatePSD() {
     const imageFiles = fs.readdirSync(outputFolder).map(file => `${outputFolder}/${file}`);
 
@@ -379,8 +382,8 @@ import pandas as pd
 import math
 from PIL import Image
 
-path_mask_generator = models_dir + '/mask_generator.pth'
-path_residue_predictor = models_dir + '/residue_predictor.pth'
+path_mask_generator = pathlib.Path(models_dir, "mask_generator.pth")
+path_residue_predictor =  pathlib.Path(models_dir, "residue_predictor.pth")
 
 # define model
 mask_generator = None
@@ -411,9 +414,9 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
     # Create CSV File which describes test images path.
     csv_df = pd.DataFrame()
     # csv_df = csv_df.append(pd.Series([f"{processing_dir}/{final_img_name}"]), ignore_index=True)
-    csv_df = pd.concat([csv_df, pd.DataFrame([f"{processing_dir}/{final_img_name}"])], ignore_index=True)
-    csv_path = f'{processing_dir}/{run_name}.csv'
-    pallete_csv_path = f'{processing_dir}/{run_name}_pallete.csv'
+    csv_df = pd.concat([csv_df, pd.DataFrame([pathlib.Path(processing_dir, final_img_name)])], ignore_index=True)
+    csv_path = pathlib.Path(processing_dir, run_name + ".csv")
+    pallete_csv_path =  pathlib.Path(processing_dir, run_name + "_pallete.csv")
     csv_df.to_csv(csv_path, index=False, header=False)
 
     # Create color palettes csv
@@ -453,8 +456,8 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
         pallete_file.write(line + "\n" + line)
 
     # Create Output Dir
-    create_dir_if_not_exists(f'{processing_dir}/results/%s/%s' % (run_name, final_img_name))
-    create_dir_if_not_exists(f'{processing_dir}/results/%s/%s/layers' % (run_name, final_img_name))
+    create_dir_if_not_exists(pathlib.Path(processing_dir, "results", run_name, final_img_name))
+    create_dir_if_not_exists(pathlib.Path(processing_dir, "results", run_name, final_img_name, "layers"))
     # path_mask_generator = f'{processing_dir}/models' + '/mask_generator.pth'
     # path_residue_predictor = f'{processing_dir}/models' + '/residue_predictor.pth'
 

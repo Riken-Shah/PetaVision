@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import firebase_admin
 from firebase_admin import credentials, db, storage, firestore
@@ -233,7 +234,7 @@ def upscale(firestore_id, ref_image, extra_params):
 
 
 def layering(firestore_id, ref_image, extra_params):
-    temp_folder = "layering/runs/temp"
+    temp_folder = pathlib.Path("layering", "runs", "temp")
     img_name = download_img_to_folder(ref_image, temp_folder, firestore_id)
 
     psd_path = perform_layering(temp_folder, img_name, extra_params["dominant_colors"])
