@@ -294,8 +294,6 @@ def process_task(task_id, task):
 
 # Listen for changes in the /tasks node
 def on_task_change(event):
-    global task_running
-    task_running = True
     try:
         task_id, task = get_task_info_from_event(event)
         if task and "status" in task and task["status"] == "queued":
@@ -327,10 +325,14 @@ COOLDOWN_TIME = 60  # Cooldown time in seconds (1 minute)
 # Thread-safe map to keep track of whether a task is running
 task_running_map = defaultdict(threading.Event)
 
+tasks_stream = None
+
 
 # Listen for changes in the /tasks node
 def listen_for_task_changes(sc):
-    tasks_stream = None
+    global tasks_stream
+    if tasks_stream is not None:
+        tasks_stream.close()
     print("Listening for task changes...")
     try:
         tasks_stream = db_ref.listen(on_task_change)
@@ -341,9 +343,6 @@ def listen_for_task_changes(sc):
     for task_id in task_running_map:
         task_running_map[task_id].wait()
 
-    # Close the tasks_stream to release resources
-    if tasks_stream:
-        tasks_stream.close()
 
     # Schedule the next listening after the cooldown time
     sc.enter(COOLDOWN_TIME, 1, listen_for_task_changes, (sc,))
