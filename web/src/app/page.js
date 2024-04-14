@@ -23,6 +23,8 @@ import { useSearchParams } from "next/navigation";
 import Auth from "@/app/components/Auth";
 import OrganizationModal from "@/app/components/OrganizationModal";
 import InsufficientModal from "@/app/components/InsufficientModal";
+import AuthModal from "@/app/components/AuthModal";
+import NotOnWorkspaceModal from "@/app/components/NotOnWorkspace";
 
 function isValidURL(string) {
     const res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
@@ -120,7 +122,6 @@ function Home() {
 
     // For modals
     const { isOpen: settingsModalOpen, onOpen: settingsModalOnOpen, onOpenChange: settingsModalOnOpenChange } = useDisclosure();
-    const { isOpen: authModelOpen, onOpen: authModelOnOpen } = useDisclosure();
     const { isOpen: loadingModelOpen, onOpen: loadingModelOnOpen, onClose: loadingModelOnClose } = useDisclosure();
     const { isOpen: orgModalOpen, onOpen:orgModelOnOpen, onClose: orgModelOnClose } = useDisclosure();
 
@@ -179,7 +180,7 @@ function Home() {
                 const devUsers = ["rikenshah.02@gmail.com", "rikenshah2002@gmail.com"];
                 toggleAnalytics(!devUsers.includes(user.email));
             } else {
-                authModelOnOpen();
+                // authModelOnOpen();
                 console.log("User is logged out");
             }
         });
@@ -215,27 +216,9 @@ function Home() {
 
             <ImageGrid user={user} search={search} nasDrive={nasDrive}  loadingModalOnOpen={loadingModelOnOpen} visibleImages={visibleImages} setVisibleImages={setVisibleImages} images={images} imageAPI={imageAPI} updateTags={(photo_url, tags) => updateTags(inferenceAPI, photo_url, tags, loadingModelOnOpen, loadingModelOnClose)} />
 
-            {/* Auth Modal */}
-            <Modal isOpen={authModelOpen} onOpenChange={authModelOnOpen} backdrop={"blur"}>
-                <ModalContent>
-                    {(onClose) => (
-                        <>
-                            <ModalHeader className="flex flex-col gap-1">Login to continue</ModalHeader>
-                            <ModalBody>
-                                <div className="bg-white p-10 rounded-lg block">
-                                    <span className="text-black text-2l">Please Sign In to Continue</span>
-                                    <Auth />
-                                </div>
-                            </ModalBody>
-                            <ModalFooter>
-                                <Button color="danger" variant="light" onPress={onClose}>
-                                    Close
-                                </Button>
-                            </ModalFooter>
-                        </>
-                    )}
-                </ModalContent>
-            </Modal>
+            <AuthModal />
+            <NotOnWorkspaceModal />
+
 
             {/* Settings Modal */}
             <Modal isOpen={settingsModalOpen} onOpenChange={settingsModalOnOpen}  backdrop="blur">

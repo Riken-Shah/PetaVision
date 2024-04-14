@@ -22,6 +22,8 @@ import {auth, toggleAnalytics} from "../../../utils/firebase";
 import Images from "@/app/gen/components/Images";
 import Text2Img from "@/app/gen/components/Text2Img";
 import Upscale from "@/app/gen/components/Upscale";
+import AuthModal from "@/app/components/AuthModal";
+import NotOnWorkspaceModal from "@/app/components/NotOnWorkspace";
 
 
 export default function App() {
@@ -133,6 +135,10 @@ export default function App() {
                 </Tab>
             </Tabs>
             {activeTask && <Images task={activeTask}/>}
+
+            <AuthModal />
+            <NotOnWorkspaceModal />
+
 
             {/* Loading Modal */}
             <Modal isOpen={loadingModelOpen} onOpenChange={loadingModelOnOpen} backdrop={"blur"} placement={"center"}>
