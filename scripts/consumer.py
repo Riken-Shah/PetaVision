@@ -1,5 +1,7 @@
 import os
 import pathlib
+import threading
+from collections import defaultdict
 
 import firebase_admin
 from firebase_admin import credentials, db, storage, firestore
@@ -72,6 +74,7 @@ def upload_image(base64_string, firestore_id, index):
 
     return blob.public_url
 
+
 def upload_psd_from_path(psd_path, firestore_id):
     with open(psd_path, 'rb') as psd_file:
         psd_content = psd_file.read()
@@ -87,7 +90,6 @@ def upload_psd_from_path(psd_path, firestore_id):
     blob.acl.save()
 
     return blob.public_url
-
 
 
 def update_final_status_in_firestore(task_id, firestore_id, success):
@@ -250,6 +252,9 @@ def process_task(task_id, task):
         update_task_state(task_id, 'processing')
         print(f"Processing task {task_id}...", task)
 
+        # Mark the task as running
+        task_running_map[task_id].set()
+
         # Simulate API call
         # dummy_response = simulate_api_call()
         img_urls = []
@@ -282,6 +287,9 @@ def process_task(task_id, task):
         # Update task state to "error" if an error occurs
         update_task_state(task_id, 'failed')
         update_final_status_in_firestore(task_id, task.get("firestore_id"), False)
+    finally:
+        # Mark the task as finished
+        task_running_map[task_id].clear()
 
 
 # Listen for changes in the /tasks node
@@ -292,9 +300,9 @@ def on_task_change(event):
         task_id, task = get_task_info_from_event(event)
         if task and "status" in task and task["status"] == "queued":
             process_task(task_id, task)
+
     except Exception as e:
         print(f"Error processing task change: {e}")
-    task_running = False
 
 
 def get_task_info_from_event(event):
@@ -314,27 +322,26 @@ import time
 import sched
 
 MAX_ACTIVE_TIME = 600  # Maximum active time in seconds (10 minutes)
-COOLDOWN_TIME = 300  # Cooldown time in seconds (5 minutes)
+COOLDOWN_TIME = 60  # Cooldown time in seconds (1 minute)
 
-task_running = False  # Flag to indicate if a task is currently running
+# Thread-safe map to keep track of whether a task is running
+task_running_map = defaultdict(threading.Event)
 
 
+# Listen for changes in the /tasks node
 def listen_for_task_changes(sc):
-    global task_running
-
     print("Listening for task changes...")
     try:
         tasks_stream = db_ref.listen(on_task_change)
     except requests.exceptions.Timeout as e:
         print(f"Error: {e}. Re-establishing connection...")
 
-    # Check if a task is currently running
-    if task_running:
-        # If a task is running, schedule the next listening after the active time
-        sc.enter(MAX_ACTIVE_TIME, 1, listen_for_task_changes, (sc,))
-    else:
-        # If no task is running, schedule the next listening after the cooldown time
-        sc.enter(COOLDOWN_TIME, 1, listen_for_task_changes, (sc,))
+    # Wait for any task to finish running before scheduling the next listening
+    for task_id in task_running_map:
+        task_running_map[task_id].wait()
+
+    # Schedule the next listening after the cooldown time
+    sc.enter(COOLDOWN_TIME, 1, listen_for_task_changes, (sc,))
 
 
 # Create a scheduler instance
@@ -345,7 +352,6 @@ scheduler.enter(0, 1, listen_for_task_changes, (scheduler,))
 
 # Run the scheduler
 scheduler.run()
-
 
 # layering("z5STOLemjohGH5bNySjygSg40W73", "https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F101_cutout.png?alt=media&token=d2ad1b0b-2cba-40b0-904b-d9af3c21cae8", {"dominant_colors": [
 #     {
