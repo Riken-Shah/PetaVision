@@ -330,6 +330,7 @@ task_running_map = defaultdict(threading.Event)
 
 # Listen for changes in the /tasks node
 def listen_for_task_changes(sc):
+    tasks_stream = None
     print("Listening for task changes...")
     try:
         tasks_stream = db_ref.listen(on_task_change)
@@ -339,6 +340,10 @@ def listen_for_task_changes(sc):
     # Wait for any task to finish running before scheduling the next listening
     for task_id in task_running_map:
         task_running_map[task_id].wait()
+
+    # Close the tasks_stream to release resources
+    if tasks_stream:
+        tasks_stream.close()
 
     # Schedule the next listening after the cooldown time
     sc.enter(COOLDOWN_TIME, 1, listen_for_task_changes, (sc,))
