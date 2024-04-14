@@ -76,14 +76,15 @@ def upload_image(base64_string, firestore_id, index):
 
 
 def upload_psd_from_path(psd_path, firestore_id):
-    with open(psd_path, 'rb') as psd_file:
-        psd_content = psd_file.read()
+    # with open(psd_path, 'rb') as psd_file:
+    #     psd_content = psd_file.read()
 
     psd_filename = f"tasks/{firestore_id}/{os.path.basename(psd_path)}"
     blob = bucket.blob(psd_filename)
 
     # Set mimetype to 'image/vnd.adobe.photoshop' for PSD files
-    blob.upload_from_string(psd_content, content_type='image/vnd.adobe.photoshop')
+    # blob.upload_from_string(psd_content, content_type='image/vnd.adobe.photoshop')
+    blob.upload_from_filename(psd_path)
 
     # Set the ACL to make the PSD file publicly accessible
     blob.acl.all().grant_read()
