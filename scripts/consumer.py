@@ -286,12 +286,15 @@ def process_task(task_id, task):
 
 # Listen for changes in the /tasks node
 def on_task_change(event):
+    global task_running
+    task_running = True
     try:
         task_id, task = get_task_info_from_event(event)
         if task and "status" in task and task["status"] == "queued":
             process_task(task_id, task)
     except Exception as e:
         print(f"Error processing task change: {e}")
+    task_running = False
 
 
 def get_task_info_from_event(event):
@@ -306,7 +309,43 @@ def get_task_info_from_event(event):
 
 
 # Listen for changes in the /tasks node
-tasks_stream = db_ref.listen(on_task_change)
+# tasks_stream = db_ref.listen(on_task_change)
+import time
+import sched
+
+MAX_ACTIVE_TIME = 600  # Maximum active time in seconds (10 minutes)
+COOLDOWN_TIME = 300  # Cooldown time in seconds (5 minutes)
+
+task_running = False  # Flag to indicate if a task is currently running
+
+
+def listen_for_task_changes(sc):
+    global task_running
+
+    print("Listening for task changes...")
+    try:
+        tasks_stream = db_ref.listen(on_task_change)
+    except requests.exceptions.Timeout as e:
+        print(f"Error: {e}. Re-establishing connection...")
+
+    # Check if a task is currently running
+    if task_running:
+        # If a task is running, schedule the next listening after the active time
+        sc.enter(MAX_ACTIVE_TIME, 1, listen_for_task_changes, (sc,))
+    else:
+        # If no task is running, schedule the next listening after the cooldown time
+        sc.enter(COOLDOWN_TIME, 1, listen_for_task_changes, (sc,))
+
+
+# Create a scheduler instance
+scheduler = sched.scheduler(time.time, time.sleep)
+
+# Schedule the initial listening
+scheduler.enter(0, 1, listen_for_task_changes, (scheduler,))
+
+# Run the scheduler
+scheduler.run()
+
 
 # layering("z5STOLemjohGH5bNySjygSg40W73", "https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F101_cutout.png?alt=media&token=d2ad1b0b-2cba-40b0-904b-d9af3c21cae8", {"dominant_colors": [
 #     {
