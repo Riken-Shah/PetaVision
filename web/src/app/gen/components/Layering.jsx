@@ -47,26 +47,57 @@ export default function Img2Img({orgUser,startLoading, endLoading, isDisabled}) 
         setUploadedURL(imageURL)
         console.log(imageURL)
 
-        // Step 1: Create a FileReader object
+
+        const MAX_WIDTH = 800; // Set your desired maximum width for resizing
+
         const reader = new FileReader();
 
+        // Step 1: Define a function to resize the image
+        function resizeImage(image, maxWidth) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Calculate the new height based on the maximum width
+            const aspectRatio = image.width / image.height;
+            const newHeight = maxWidth / aspectRatio;
+
+            // Set the canvas dimensions to the new size
+            canvas.width = maxWidth;
+            canvas.height = newHeight;
+
+            // Draw the image onto the canvas with the new dimensions
+            ctx.drawImage(image, 0, 0, maxWidth, newHeight);
+
+            // Convert the resized image on the canvas to a Data URL
+            return canvas.toDataURL('image/jpeg'); // Adjust format as needed
+        }
+
         // Step 2: Define what to do when the file is loaded
-        reader.onload = async function(event) {
+        reader.onload = async function (event) {
             // 'event.target.result' contains the Base64 string representing the Blob
             const base64String = event.target.result;
-            drawImageOnCanvas(base64String, canvasRef);
-            const colors = getDominantColors(await getImageFromUrl(base64String), 7)
-            setDominantColors(colors.hex)
-            console.log(colors)
-            endLoading();
+            const image = new Image();
 
+            // Load the image to get its dimensions
+            image.src = base64String;
+
+            // Wait for the image to load
+            image.onload = async function () {
+                // Resize the image
+                const resizedBase64String = resizeImage(image, MAX_WIDTH);
+
+                // Process the resized image
+                drawImageOnCanvas(resizedBase64String, canvasRef);
+                const colors = getDominantColors(await getImageFromUrl(resizedBase64String), 7);
+                setDominantColors(colors.hex);
+                console.log(colors);
+                endLoading();
+            };
         };
 
         // Step 3: Read the Blob as a Base64 string
         reader.readAsDataURL(blob);
-
-
-    };
+    }
 
     const submitTask = async function () {
         const dominatColorsInRGB = dominantColors.map((x) => hexToRgb(x))
