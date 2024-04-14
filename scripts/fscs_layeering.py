@@ -284,7 +284,7 @@ def generate_psd(index):
   const { createCanvas, loadImage } = require('canvas');
   const { initializeCanvas, writePsd, readPsd } = require('ag-psd');
   const { promisify } = require('util');
-  const sizeOf = promisify(require('image-size'));""" + f"""const psdFilePath = '{str(psd_path)}';""" + f"""const outputFolder = '{str(outputFolder)}';""" + """
+  const sizeOf = promisify(require('image-size'));""" + f"""const psdFilePath = '{psd_path.as_posix()}';""" + f"""const outputFolder = '{outputFolder.as_posix()}';""" + """
   async function generatePSD() {
     const imageFiles = fs.readdirSync(outputFolder).map(file => `${outputFolder}/${file}`);
 
