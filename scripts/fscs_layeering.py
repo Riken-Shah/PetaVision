@@ -34,11 +34,12 @@ import cv2
 import os
 import time
 import pathlib
+
 ### Define Variables
 models_dir = pathlib.Path("layering", "models")
 test_imgs_dir = pathlib.Path("layering", "runs")
 output_dir = pathlib.Path("layering", "runs", "outputs")
-processing_dir =  pathlib.Path("layering", "runs")
+processing_dir = pathlib.Path("layering", "runs")
 num_primary_color = 7
 resize_scale_factor = 1
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -232,7 +233,8 @@ def generate_layers(run_name, img_name, test_loader, manual_colors):
                 # batchsizeは１で計算されているはず．それぞれ保存する．
                 save_layer_number = 0
                 save_image(primary_color_layers[save_layer_number, :, :, :, :],
-                           pathlib.Path(processing_dir, "results", run_name, img_name + '_img-%02d_primary_color_layers.png' % batch_idx))
+                           pathlib.Path(processing_dir, "results", run_name,
+                                        img_name + '_img-%02d_primary_color_layers.png' % batch_idx))
                 save_image(reconst_img[save_layer_number, :, :, :].unsqueeze(0),
                            pathlib.Path(processing_dir, "results", run_name,
                                         img_name + '_img-%02d_reconst_img.png' % batch_idx))
@@ -249,36 +251,37 @@ def generate_layers(run_name, img_name, test_loader, manual_colors):
                 for i in range(len(RGBA_layers)):
                     save_image(RGBA_layers[i, :, :, :],
                                pathlib.Path(processing_dir, "results", run_name,
-                                            img_name, "layers", "img-%02d_layer-%02d.png" % (batch_idx,i)))
-
+                                            img_name, "layers", "img-%02d_layer-%02d.png" % (batch_idx, i)))
 
                 print(f'Saved to {processing_dir}/results/%s/%s/...' % (run_name, img_name))
 
-            if False:
-                ### mono_colorの分も保存する ###
-                # RGBAの４chのpngとして保存する
-                mono_RGBA_layers = torch.cat((primary_color_layers, processed_alpha_layers),
-                                             dim=2)  # out: bn, ln, 4, h, w
-                # test ではバッチサイズが１なので，bn部分をなくす
-                mono_RGBA_layers = mono_RGBA_layers[0]  # ln, 4. h, w
-                # ln ごとに結果を保存する
-                for i in range(len(mono_RGBA_layers)):
-                    save_image(mono_RGBA_layers[i, :, :, :],
-                               'results/%s/%s/mono_img-%02d_layer-%02d.png' % (run_name, img_name, batch_idx, i))
-
-                save_image(
-                    (primary_color_layers * processed_alpha_layers).sum(dim=1)[save_layer_number, :, :, :].unsqueeze(0),
-                    'results/%s/%s/test' % (run_name, img_name) + '_mono_img-%02d_reconst_img.png' % batch_idx)
+            # if False:
+            #     ### mono_colorの分も保存する ###
+            #     # RGBAの４chのpngとして保存する
+            #     mono_RGBA_layers = torch.cat((primary_color_layers, processed_alpha_layers),
+            #                                  dim=2)  # out: bn, ln, 4, h, w
+            #     # test ではバッチサイズが１なので，bn部分をなくす
+            #     mono_RGBA_layers = mono_RGBA_layers[0]  # ln, 4. h, w
+            #     # ln ごとに結果を保存する
+            #     for i in range(len(mono_RGBA_layers)):
+            #         save_image(mono_RGBA_layers[i, :, :, :],
+            #                    'results/%s/%s/mono_img-%02d_layer-%02d.png' % (run_name, img_name, batch_idx, i))
+            #
+            #     save_image(
+            #         (primary_color_layers * processed_alpha_layers).sum(dim=1)[save_layer_number, :, :, :].unsqueeze(0),
+            #         'results/%s/%s/test' % (run_name, img_name) + '_mono_img-%02d_reconst_img.png' % batch_idx)
 
             if batch_idx == 0:
                 break  # debug用
+    return pathlib.Path(processing_dir, "results", run_name,
+                        img_name, "layers")
 
 
-def generate_psd(index):
+def generate_psd(all_layers_folder):
     # !npm install ag-psd canvas image-size
 
-    psd_path = pathlib.Path(processing_dir, "results", "sample", index + ".jpeg", "output.psd")
-    outputFolder = pathlib.Path(processing_dir, "results", "sample", index + ".jpeg", "layers")
+    psd_path = pathlib.Path(all_layers_folder, "output.psd")
+    outputFolder = pathlib.Path(all_layers_folder)
     js_code = """
   const fs = require('fs');
   const { createCanvas, loadImage } = require('canvas');
@@ -383,31 +386,18 @@ import math
 from PIL import Image
 
 path_mask_generator = pathlib.Path(models_dir, "mask_generator.pth")
-path_residue_predictor =  pathlib.Path(models_dir, "residue_predictor.pth")
+path_residue_predictor = pathlib.Path(models_dir, "residue_predictor.pth")
 
 # define model
 mask_generator = None
 residue_predictor = None
 
-def perform_layering(test_imgs_dir, img_name, dominant_colors):
-    # for img_name in os.listdir(test_imgs_dir):
-    #   %cd {processing_dir}
-    _, file_extension = os.path.splitext(img_name.lower())
-    valid_image_formats = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']  # Add more if needed
 
-    if file_extension in valid_image_formats:
-        # Process the image file
-        # Your existing code for handling the image file goes here
-        print(f"Processing image: {img_name}")
-    else:
-        print(f"Ignoring non-image file: {img_name}")
-        return
-        # continue
-
+def get_layers(img_path, dominant_colors):
+    img_name = os.path.basename(img_path)
     file_name = img_name.split(".")[0]
-
     final_img_name = f"{file_name}.jpeg"
-    Image.open(os.path.join(test_imgs_dir, img_name)).convert("RGB").save(os.path.join(processing_dir, final_img_name))
+    Image.open(img_path).convert("RGB").save(os.path.join(processing_dir, final_img_name))
     run_name = "sample"
     original_img_name = os.path.splitext(os.path.basename(img_name))[0]
 
@@ -416,7 +406,7 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
     # csv_df = csv_df.append(pd.Series([f"{processing_dir}/{final_img_name}"]), ignore_index=True)
     csv_df = pd.concat([csv_df, pd.DataFrame([pathlib.Path(processing_dir, final_img_name)])], ignore_index=True)
     csv_path = pathlib.Path(processing_dir, run_name + ".csv")
-    pallete_csv_path =  pathlib.Path(processing_dir, run_name + "_pallete.csv")
+    pallete_csv_path = pathlib.Path(processing_dir, run_name + "_pallete.csv")
     csv_df.to_csv(csv_path, index=False, header=False)
 
     # Create color palettes csv
@@ -437,8 +427,6 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
 
     choose_colors_max = len(manual_colors)
     print("Max: ", choose_colors_max)
-
-
 
     manual_colors = np.array(manual_colors) / 255.0
     #
@@ -483,7 +471,95 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
     mask_generator.eval()
     residue_predictor.eval()
 
-    generate_layers(run_name, final_img_name, test_loader, manual_colors)
+    output_folder = generate_layers(run_name, final_img_name, test_loader, manual_colors)
+    return output_folder
 
-    psd_path = generate_psd(original_img_name)
+
+def create_tile(image, tile_size):
+    """
+    Create a tile from the given image.
+
+    Args:
+    image (PIL.Image.Image): The input image.
+    tile_size (tuple): The size of the tile (width, height).
+
+    Returns:
+    list: A list of tile images.
+    """
+    width, height = image.size
+    tiles = []
+    for y in range(0, height, tile_size[1]):
+        for x in range(0, width, tile_size[0]):
+            box = (x, y, x + tile_size[0], y + tile_size[1])
+            tiles.append(image.crop(box))
+    return tiles
+
+
+def merge_tiles(tile_paths, image_size):
+    """
+    Merge the tiles into a single image.
+
+    Args:
+    tile_paths (list): A list of file paths to the tiles.
+    image_size (tuple): The size of the original image (width, height).
+
+    Returns:
+    PIL.Image.Image: The merged image.
+    """
+    merged_image = Image.new("RGBA", image_size)
+    x_offset = 0
+    y_offset = 0
+    for tile_path in tile_paths:
+        tile = Image.open(tile_path)
+        merged_image.paste(tile, (x_offset, y_offset))
+        x_offset += tile.size[0]
+        if x_offset >= image_size[0]:
+            x_offset = 0
+            y_offset += tile.size[1]
+    return merged_image
+
+
+def perform_layering(test_imgs_dir, img_name, dominant_colors):
+    # for img_name in os.listdir(test_imgs_dir):
+    #   %cd {processing_dir}
+    _, file_extension = os.path.splitext(img_name.lower())
+    valid_image_formats = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']  # Add more if needed
+
+    if file_extension in valid_image_formats:
+        # Process the image file
+        # Your existing code for handling the image file goes here
+        print(f"Processing image: {img_name}")
+    else:
+        print(f"Ignoring non-image file: {img_name}")
+        return
+        # continue
+    # Open the image
+    img_path = os.path.join(test_imgs_dir, img_name)
+    original_image = Image.open(img_path)
+
+    tile_size = [2000, 2000]
+
+    # Create tiles from the original image
+    tiles = create_tile(original_image, tile_size)
+    index = 0
+    all_outputs = []
+    for tile in tiles:
+        temp_img_path = os.path.join(test_imgs_dir, f"temp_{index}.jpeg")
+        tile.convert("RGB").save(temp_img_path)
+        output_folder = get_layers(temp_img_path, dominant_colors)
+        all_outputs.append(output_folder)
+        index += 1
+
+    merged_output = os.path.join(output_dir, img_name)
+    create_dir_if_not_exists(merged_output)
+    index = 0
+    for i in range(0, len(dominant_colors)):
+        layer_paths = []
+        for output_folder in all_outputs:
+            layer_paths.append(pathlib.Path(output_folder, "img-%02d_layer-%02d.png" % (0, i)))
+        merged_image = merge_tiles(layer_paths, original_image.size)
+        merged_image.save(os.path.join(merged_output, f"{index}.png"))
+        index += 1
+
+    psd_path = generate_psd(merged_output)
     return psd_path
