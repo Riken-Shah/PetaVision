@@ -89,7 +89,7 @@ def upload_psd_from_path(psd_path, firestore_id):
 
     # Set mimetype to 'image/vnd.adobe.photoshop' for PSD files
     # blob.upload_from_string(psd_content, content_type='image/vnd.adobe.photoshop')
-    blob.upload_from_filename(psd_path, content_type='application/octet-stream')
+    blob.upload_from_filename(psd_path, content_type='application/octet-stream', num_retries=5, timeout=300)
 
     # Set the ACL to make the PSD file publicly accessible
     blob.acl.all().grant_read()
