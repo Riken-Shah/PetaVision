@@ -76,20 +76,25 @@ def upload_image(base64_string, firestore_id, index):
 
 
 def upload_psd_from_path(psd_path, firestore_id):
+    start = time.time()
+
     # with open(psd_path, 'rb') as psd_file:
     #     psd_content = psd_file.read()
 
+
     psd_filename = f"tasks/{firestore_id}/{os.path.basename(psd_path)}"
-    blob = bucket.blob(psd_filename, chunk_size=262144)
+    CHUNK_SIZE = 1024 * 1024 * 30
+    blob = bucket.blob(psd_filename, chunk_size=CHUNK_SIZE)
 
     # Set mimetype to 'image/vnd.adobe.photoshop' for PSD files
     # blob.upload_from_string(psd_content, content_type='image/vnd.adobe.photoshop')
-    blob.upload_from_filename(psd_path)
+    blob.upload_from_filename(psd_path, content_type='application/octet-stream')
 
     # Set the ACL to make the PSD file publicly accessible
     blob.acl.all().grant_read()
     blob.acl.save()
-
+    end = time.time()
+    print("Uploading PSD time: ", end - start)
     return blob.public_url
 
 
@@ -357,6 +362,8 @@ scheduler.enter(0, 1, listen_for_task_changes, (scheduler,))
 
 # Run the scheduler
 scheduler.run()
+
+# upload_psd_from_path("/Users/rikenshah/Desktop/Projects/FashionxAI/local-sync-go/scripts/layering/runs/outputs/664153a3-596c-437e-812a-7694441e299b.jpeg/output.psd", "temp")
 
 # layering("z5STOLemjohGH5bNySjygSg40W73", "https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F101_cutout.png?alt=media&token=d2ad1b0b-2cba-40b0-904b-d9af3c21cae8", {"dominant_colors": [
 #     {
