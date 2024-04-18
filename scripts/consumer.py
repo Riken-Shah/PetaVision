@@ -2,6 +2,7 @@ import os
 import pathlib
 import threading
 from collections import defaultdict
+from urllib.parse import urlparse
 
 import firebase_admin
 from firebase_admin import credentials, db, storage, firestore
@@ -177,6 +178,42 @@ def download_img_to_folder(img_url, folder_name, name):
     return ""
 
 
+def download(url, folder_name, name, attempts=2):
+    """Downloads a URL content into a file (with large file support by streaming)
+
+    :param url: URL to download
+    :param file_path: Local file name to contain the data downloaded
+    :param attempts: Number of attempts
+    :return: New file path. Empty string if the download failed
+    """
+    # if not file_path:
+    #     file_path = os.path.realpath(os.path.basename(url))
+
+
+    img_name = f"{name}.jpeg"
+    save_path = os.path.join(folder_name, img_name)
+    print(f'Downloading {url} content to {save_path}')
+    url_sections = urlparse(url)
+    if not url_sections.scheme:
+        print('The given url is missing a scheme. Adding http scheme')
+        url = f'https://{url}'
+
+        print(f'New url: {url}')
+    for attempt in range(1, attempts+1):
+        try:
+            if attempt > 1:
+                time.sleep(10)  # 10 seconds wait time between downloads
+            with requests.get(url, stream=True) as response:
+                response.raise_for_status()
+                with open(save_path, 'wb') as out_file:
+                    for chunk in response.iter_content(chunk_size=1024*1024):  # 1MB chunks
+                        out_file.write(chunk)
+                print('Download finished successfully')
+                return img_name
+        except Exception as ex:
+            print(f'Attempt #{attempt} failed with error: {ex}')
+    return ''
+
 def img2img(firestore_id, ref_image, prompt, negative_prompt, count, extra_params):
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -243,7 +280,7 @@ def upscale(firestore_id, ref_image, extra_params):
 
 def layering(firestore_id, ref_image, extra_params):
     temp_folder = pathlib.Path("layering", "runs", "temp")
-    img_name = download_img_to_folder(ref_image, temp_folder, firestore_id)
+    img_name = download(ref_image, temp_folder, firestore_id)
 
     psd_path = perform_layering(temp_folder, img_name, extra_params["dominant_colors"])
     # Upload images to Firebase Storage
