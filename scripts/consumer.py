@@ -80,7 +80,7 @@ def upload_psd_from_path(psd_path, firestore_id):
     #     psd_content = psd_file.read()
 
     psd_filename = f"tasks/{firestore_id}/{os.path.basename(psd_path)}"
-    blob = bucket.blob(psd_filename)
+    blob = bucket.blob(psd_filename, chunk_size=262144)
 
     # Set mimetype to 'image/vnd.adobe.photoshop' for PSD files
     # blob.upload_from_string(psd_content, content_type='image/vnd.adobe.photoshop')
