@@ -553,6 +553,9 @@ def perform_layering(test_imgs_dir, img_name, dominant_colors):
     merged_output = os.path.join(output_dir, img_name)
     create_dir_if_not_exists(merged_output)
     index = 0
+    original_image.convert("RGBA").save(os.path.join(merged_output, f"{index}.png"))
+    index += 1
+
     for i in range(0, len(dominant_colors)):
         layer_paths = []
         for output_folder in all_outputs:
