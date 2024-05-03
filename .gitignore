@@ -17,6 +17,7 @@ scripts/*.pyc
 scripts/firebase_admin.json
 
 
+scripts/layering/old_runs/**
 scripts/layering/runs/**
 node_modules
 scripts/generate_psd.js

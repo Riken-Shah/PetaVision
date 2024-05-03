@@ -8,7 +8,8 @@ import firebase_admin
 from firebase_admin import credentials, db, storage, firestore
 import requests
 import json
-from fscs_layeering import perform_layering
+# from fscs_layeering import perform_layering
+from fast_layer_decompostion import perform_layering
 import base64
 import time  # Added for simulating delay
 
@@ -167,7 +168,7 @@ def download_img_to_folder(img_url, folder_name, name):
     if img_response.status_code == 200:
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
-        img_name = f"{name}.jpeg"
+        img_name = f"{name}.png"
         with open(f'{folder_name}/{img_name}', 'wb') as img_file:
             img_file.write(img_response.content)
         print(f"Image downloaded successfully to '{folder_name}/{img_name}'.")
@@ -190,7 +191,7 @@ def download(url, folder_name, name, attempts=2):
     #     file_path = os.path.realpath(os.path.basename(url))
 
 
-    img_name = f"{name}.jpeg"
+    img_name = f"{name}.png"
     save_path = os.path.join(folder_name, img_name)
     print(f'Downloading {url} content to {save_path}')
     url_sections = urlparse(url)
@@ -282,7 +283,8 @@ def layering(firestore_id, ref_image, extra_params):
     temp_folder = pathlib.Path("layering", "runs", "temp")
     img_name = download(ref_image, temp_folder, firestore_id)
 
-    psd_path = perform_layering(temp_folder, img_name, extra_params["dominant_colors"])
+    # psd_path = perform_layering(temp_folder, img_name, extra_params["dominant_colors"])
+    psd_path = perform_layering(temp_folder, img_name, extra_params["n_layers"])
     # Upload images to Firebase Storage
     psd_uploaded_path = upload_psd_from_path(psd_path, firestore_id)
     print(psd_uploaded_path)
@@ -340,7 +342,9 @@ def on_task_change(event):
     try:
         task_id, task = get_task_info_from_event(event)
         if task and "status" in task and task["status"] == "queued":
+            st = time.time()
             process_task(task_id, task)
+            print(f"Task {task_id} processed successfully. Time taken: {time.time() - st}")
 
     except Exception as e:
         print(f"Error processing task change: {e}")
@@ -400,7 +404,7 @@ scheduler.enter(0, 1, listen_for_task_changes, (scheduler,))
 # Run the scheduler
 scheduler.run()
 
-# upload_psd_from_path("/Users/rikenshah/Desktop/Projects/FashionxAI/local-sync-go/scripts/layering/runs/outputs/664153a3-596c-437e-812a-7694441e299b.jpeg/output.psd", "temp")
+# upload_psd_from_path("/Users/rikenshah/Desktop/Projects/FashionxAI/local-sync-go/scripts/layering/old_runs/outputs/664153a3-596c-437e-812a-7694441e299b.jpeg/output.psd", "temp")
 
 # layering("z5STOLemjohGH5bNySjygSg40W73", "https://firebasestorage.googleapis.com/v0/b/ai-folder.appspot.com/o/search%2Frikenshah.02%40gmail.com%2F101_cutout.png?alt=media&token=d2ad1b0b-2cba-40b0-904b-d9af3c21cae8", {"dominant_colors": [
 #     {

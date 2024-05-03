@@ -1,5 +1,6 @@
 "use client"
 import {Button, Slider} from "@nextui-org/react";
+import {Switch} from "@nextui-org/react";
 import {useEffect, useRef, useState} from "react";
 import {fileUpload} from "../../../../utils/upload";
 import {fireTask} from "../../../../utils/helpers"
@@ -37,6 +38,8 @@ export default function Img2Img({orgUser,startLoading, endLoading, isDisabled}) 
     const canvasRef = useRef();
     const [uploadedURL, setUploadedURL] = useState();
     const [dominantColors, setDominantColors] = useState([]);
+    const [autoLayers, setAutoLayers] = useState(true);
+    const [numLayers, setNumLayers] = useState(6);
 
 
     const handleOnImageInputChange = async (e) => {
@@ -103,7 +106,8 @@ export default function Img2Img({orgUser,startLoading, endLoading, isDisabled}) 
         const dominatColorsInRGB = dominantColors.map((x) => hexToRgb(x))
         await fireTask("layering", orgUser.org_id, {
             count: 1, refImage: uploadedURL, extraParams: {
-                dominant_colors: dominatColorsInRGB
+                // dominant_colors: dominatColorsInRGB,
+                n_layers: autoLayers ? -1: numLayers,
             }
         });
     }
@@ -159,23 +163,44 @@ return (
 
         <canvas ref={canvasRef}/>
 
-        {dominantColors.length ? <div className="flex w-full">
-        {dominantColors.map((dominantColor, index) =>
-            <div style={{backgroundColor: dominantColor}} className="flex w-10 h-10" onClick={() => {
-                    setDominantColors((prevState) => {
-                    const newDominantColor = [...prevState]
-                    newDominantColor.splice(index, 1)
-                    return newDominantColor
-                })
-            }}>
-        </div>)}
-            {dominantColors.length < 7 && <div className="flex w-10 h-10 text-white text-2xl" onClick={() => {
+        {/*{dominantColors.length ? <div className="flex w-full">*/}
+        {/*{dominantColors.map((dominantColor, index) =>*/}
+        {/*    <div style={{backgroundColor: dominantColor}} className="flex w-10 h-10" onClick={() => {*/}
+        {/*            setDominantColors((prevState) => {*/}
+        {/*            const newDominantColor = [...prevState]*/}
+        {/*            newDominantColor.splice(index, 1)*/}
+        {/*            return newDominantColor*/}
+        {/*        })*/}
+        {/*    }}>*/}
+        {/*</div>)}*/}
+        {/*    {dominantColors.length < 7 && <div className="flex w-10 h-10 text-white text-2xl" onClick={() => {*/}
 
-            }}>+</div>}
+        {/*    }}>+</div>}*/}
 
-        </div>: <></>}
+        {/*</div>: <></>}*/}
 
-        <Button className="flex w-20" isIconOnly color="warning" variant="faded" aria-label="Take a photo" onPress={submitTask}>Submit</Button>
+        <div className="w-full flex flex-col gap-2 p-10">
+            <Switch isSelected={autoLayers} onValueChange={setAutoLayers}>
+                Auto Layers
+            </Switch>
+            {!autoLayers ?     <Slider
+        size="sm"
+        step={1}
+        color="foreground"
+        label="Layers"
+        showSteps={true}
+        maxValue={15}
+        minValue={4}
+        value={numLayers}
+        onChange={setNumLayers}
+        defaultValue={6}
+        className="max-w-md"
+      />: <></>}
+        </div>
+
+
+        <Button className="flex w-20" isIconOnly color="warning" variant="faded" aria-label="Take a photo"
+                onPress={submitTask}>Submit</Button>
     </div>
 )
 }

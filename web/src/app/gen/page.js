@@ -89,39 +89,39 @@ export default function App() {
             {/* Add orgs credits here */}
             <Chip className="absolute top-2 right-2">Credits: {orgUser?.org?.credits ?? 0}</Chip>
             <Tabs isDisabled={false} aria-label="Options" color="primary" variant="bordered" className="flex h-auto" selectedKey={selectedKey} onSelectionChange={setSelectedKey} >
-                <Tab
-                    key="img2img"
-                    title={
-                        <div className="flex items-center space-x-2">
-                            <GalleryIcon/>
-                            <span>Img2Img</span>
-                        </div>
-                    }
-                >
-                    <Img2Img isDisabled={isDisabled} orgUser={orgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>
-                </Tab>
-                <Tab
-                    key="text2img"
-                    title={
-                        <div className="flex items-center space-x-2">
-                            <MusicIcon/>
-                            <span>Text2Img</span>
-                        </div>
-                    }
-                >
-                <Text2Img orgUser={orgUser} isDisabled={isDisabled} styles={styles} />
-                </Tab>
-                <Tab
-                    key="upscale"
-                    title={
-                        <div className="flex items-center space-x-2">
-                            <GalleryIcon/>
-                            <span>Upscale</span>
-                        </div>
-                    }
-                >
-                    <Upscale isDisabled={isDisabled}  orgUser={orgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>
-                </Tab>
+                {/*<Tab*/}
+                {/*    key="img2img"*/}
+                {/*    title={*/}
+                {/*        <div className="flex items-center space-x-2">*/}
+                {/*            <GalleryIcon/>*/}
+                {/*            <span>Img2Img</span>*/}
+                {/*        </div>*/}
+                {/*    }*/}
+                {/*>*/}
+                {/*    <Img2Img isDisabled={isDisabled} orgUser={orgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>*/}
+                {/*</Tab>*/}
+                {/*<Tab*/}
+                {/*    key="text2img"*/}
+                {/*    title={*/}
+                {/*        <div className="flex items-center space-x-2">*/}
+                {/*            <MusicIcon/>*/}
+                {/*            <span>Text2Img</span>*/}
+                {/*        </div>*/}
+                {/*    }*/}
+                {/*>*/}
+                {/*<Text2Img orgUser={orgUser} isDisabled={isDisabled} styles={styles} />*/}
+                {/*</Tab>*/}
+                {/*<Tab*/}
+                {/*    key="upscale"*/}
+                {/*    title={*/}
+                {/*        <div className="flex items-center space-x-2">*/}
+                {/*            <GalleryIcon/>*/}
+                {/*            <span>Upscale</span>*/}
+                {/*        </div>*/}
+                {/*    }*/}
+                {/*>*/}
+                {/*    <Upscale isDisabled={isDisabled}  orgUser={orgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>*/}
+                {/*</Tab>*/}
                 <Tab
                     key="layering"
                     title={
