@@ -40,6 +40,14 @@ export default function Img2Img({orgUser,startLoading, endLoading, isDisabled}) 
     const [dominantColors, setDominantColors] = useState([]);
     const [autoLayers, setAutoLayers] = useState(true);
     const [numLayers, setNumLayers] = useState(6);
+    const [timer, setTimer] = useState(false);
+
+    const set60secsTimer = () => {
+        setTimer(true)
+        setTimeout((e) => {
+            setTimer(false)
+        }, 60000)
+    }
 
 
     const handleOnImageInputChange = async (e) => {
@@ -91,9 +99,9 @@ export default function Img2Img({orgUser,startLoading, endLoading, isDisabled}) 
 
                 // Process the resized image
                 drawImageOnCanvas(resizedBase64String, canvasRef);
-                const colors = getDominantColors(await getImageFromUrl(resizedBase64String), 7);
-                setDominantColors(colors.hex);
-                console.log(colors);
+                // const colors = getDominantColors(await getImageFromUrl(resizedBase64String), 7);
+                // setDominantColors(colors.hex);
+                // console.log(colors);
                 endLoading();
             };
         };
@@ -103,50 +111,54 @@ export default function Img2Img({orgUser,startLoading, endLoading, isDisabled}) 
     }
 
     const submitTask = async function () {
-        const dominatColorsInRGB = dominantColors.map((x) => hexToRgb(x))
+        console.log("submitting task")
+        // const dominatColorsInRGB = dominantColors.map((x) => hexToRgb(x))
         await fireTask("layering", orgUser.org_id, {
             count: 1, refImage: uploadedURL, extraParams: {
                 // dominant_colors: dominatColorsInRGB,
                 n_layers: autoLayers ? -1: numLayers,
             }
         });
+
+        set60secsTimer()
     }
 
-    useEffect(() => {
-        if (canvasRef.current) {
-            canvasRef.current.addEventListener('click', function (event) {
-                const ctx = canvasRef.current.getContext('2d');
+    // useEffect(() => {
+    //     if (canvasRef.current) {
+    //         canvasRef.current.addEventListener('click', function (event) {
+    //             const ctx = canvasRef.current.getContext('2d');
+    //
+    //
+    //             // Get coordinates of the click relative to the canvas
+    //             const x = event.offsetX;
+    //             const y = event.offsetY;
+    //
+    //             // Get the color data of the pixel at the clicked position
+    //             const pixelData = ctx.getImageData(x, y, 1, 1).data;
+    //
+    //             // Extract the RGB components from the pixel data
+    //             const red = pixelData[0];
+    //             const green = pixelData[1];
+    //             const blue = pixelData[2];
+    //
+    //             const hex =rgbToHex({red, blue, green})
+    //
+    //             // Display the color information
+    //             console.log('Clicked color (RGB):', red, green, blue);
+    //             setDominantColors((prevState) => {
+    //                     const newDominantColors = [...prevState]
+    //                     if (newDominantColors.length < 7) {
+    //                         newDominantColors.push(`#${hex.red}${hex.green}${hex.blue}`)
+    //                     }
+    //                         return newDominantColors
+    //
+    //             })
+    //
+    //         });
+    //     }
+    //
+    // }, [])
 
-
-                // Get coordinates of the click relative to the canvas
-                const x = event.offsetX;
-                const y = event.offsetY;
-
-                // Get the color data of the pixel at the clicked position
-                const pixelData = ctx.getImageData(x, y, 1, 1).data;
-
-                // Extract the RGB components from the pixel data
-                const red = pixelData[0];
-                const green = pixelData[1];
-                const blue = pixelData[2];
-
-                const hex =rgbToHex({red, blue, green})
-
-                // Display the color information
-                console.log('Clicked color (RGB):', red, green, blue);
-                setDominantColors((prevState) => {
-                        const newDominantColors = [...prevState]
-                        if (newDominantColors.length < 7) {
-                            newDominantColors.push(`#${hex.red}${hex.green}${hex.blue}`)
-                        }
-                            return newDominantColors
-
-                })
-
-            });
-        }
-
-    }, [])
 return (
     <div className="flex flex-col items-center">
         <div>
@@ -199,8 +211,9 @@ return (
         </div>
 
 
-        <Button className="flex w-20" isIconOnly color="warning" variant="faded" aria-label="Take a photo"
+        <Button className={`flex w-20`} isIconOnly color="warning" variant="faded" aria-label="Take a photo" isDisabled={timer}
                 onPress={submitTask}>Submit</Button>
+        {timer ? <p className="p-2 text-warning">Wait for 60 seconds before you can submit again</p>: <></>}
     </div>
 )
 }

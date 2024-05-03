@@ -281,6 +281,8 @@ def upscale(firestore_id, ref_image, extra_params):
 
 def layering(firestore_id, ref_image, extra_params):
     temp_folder = pathlib.Path("layering", "runs", "temp")
+    if not os.path.exists(temp_folder):
+        os.makedirs(temp_folder)
     img_name = download(ref_image, temp_folder, firestore_id)
 
     # psd_path = perform_layering(temp_folder, img_name, extra_params["dominant_colors"])
