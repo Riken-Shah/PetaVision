@@ -85,7 +85,7 @@ export default function App() {
 
     const fileRef = useRef()
     return (
-        <div className="flex w-full flex-col m-4">
+        <div className="flex w-full flex-col m-4 text-white">
             {/* Add orgs credits here */}
             <Chip className="absolute top-2 right-2">Credits: {orgUser?.org?.credits ?? 0}</Chip>
             <Tabs isDisabled={false} aria-label="Options" color="primary" variant="bordered" className="flex h-auto" selectedKey={selectedKey} onSelectionChange={setSelectedKey} >
