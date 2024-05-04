@@ -54,7 +54,8 @@ def prepare_openCL_multiplication( w_rgb, w_rgbxy_values, w_rgbxy_indices ):
     w_rgbxy_values_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=w_rgbxy_values)
     w_rgbxy_indices_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=w_rgbxy_indices)
     
-    NO_COPY = True
+    # NO_COPY = True
+    NO_COPY = False
     if NO_COPY:
         w_rgb_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.USE_HOST_PTR, hostbuf=w_rgb)
     else:

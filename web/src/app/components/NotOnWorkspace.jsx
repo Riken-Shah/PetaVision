@@ -33,7 +33,7 @@ export default function NotOnWorkspaceModal() {
             modelOnOpen();
  getClientIP().then((ipAddress) => {
      // TODO: Move this to ORG model
-     if (["122.187.218.226", "49.36.81.95", "27.56.180.95"].includes(ipAddress)) {
+     if (["122.187.218.226", "49.36.81.95", "27.56.180.95", "223.235.157.197"].includes(ipAddress)) {
          console.log(ipAddress)
          onClose();
      }
