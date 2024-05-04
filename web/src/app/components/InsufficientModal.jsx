@@ -5,7 +5,7 @@ import {createOrgUser, getOrg} from "../../../utils/helpers";
 export default function InsufficientModal({isOpen}) {
 
 return         (      <Modal isOpen={isOpen}  backdrop="blur">
-    <ModalContent>
+    <ModalContent className="text-white">
         {(onClose) => (
             <>
                 <ModalHeader className="flex flex-col gap-1">Insufficient Permission</ModalHeader>

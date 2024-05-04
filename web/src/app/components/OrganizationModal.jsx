@@ -17,8 +17,8 @@ startLoading()
         }
     }
 
-return         (      <Modal isOpen={isOpen} onOpenChange={onOpenChange}  backdrop="blur">
-    <ModalContent>
+return         (      <Modal isOpen={isOpen}   onOpenChange={onOpenChange}  backdrop="blur">
+    <ModalContent className="text-white">
         {(onClose) => (
             <>
                 <ModalHeader className="flex flex-col gap-1">Org setup</ModalHeader>

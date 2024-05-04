@@ -21,7 +21,7 @@ const AuthModal= function () {
 
     return(
             <Modal isOpen={authModelOpen} onOpenChange={authModelOnOpen} backdrop={"blur"}>
-                <ModalContent>
+                <ModalContent className="text-white">
                     {(onClose) => (
                         <>
                             <ModalHeader className="flex flex-col gap-1">Login to continue</ModalHeader>

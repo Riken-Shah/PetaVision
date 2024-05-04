@@ -142,7 +142,7 @@ export default function App() {
 
             {/* Loading Modal */}
             <Modal isOpen={loadingModelOpen} onOpenChange={loadingModelOnOpen} backdrop={"blur"} placement={"center"}>
-                <ModalContent>
+                <ModalContent className="text-white">
                     {(onClose) => (
                         <>
                             <ModalBody>
@@ -155,7 +155,7 @@ export default function App() {
 
             {/* Insufficient Credits */}
             <Modal isOpen={orgUser?.org?.credits <= 0}  backdrop={"blur"} placement={"center"}>
-                <ModalContent>
+                <ModalContent className="text-white">
                     {(onClose) => (
                         <><ModalHeader>
                             Insufficient Creditsa

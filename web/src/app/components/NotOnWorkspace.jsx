@@ -44,7 +44,7 @@ export default function NotOnWorkspaceModal() {
 
 
 return         (      <Modal isOpen={authModelOpen}  backdrop="blur">
-    <ModalContent>
+    <ModalContent className="text-white">
         {(onClose) => (
             <>
                 <ModalHeader className="flex flex-col gap-1">Insufficient Permission</ModalHeader>
