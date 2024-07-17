@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 var logsDir = filepath.Join(".local", "logs")
@@ -125,12 +127,7 @@ func closeSyncFile(filePath string) error {
 	return nil
 }
 
-func main() {
-	logFile := setupLogging()
-	defer logFile.Close()
-
-	rootFilePath, force, syncFlag := parseFlags()
-
+func runProcess(rootFilePath string, force, syncFlag bool) {
 	if syncFlag {
 		// Logic to check last_synced and run if greater than 6 hours and is_running is false
 		fmt.Println("Sync flag is set. Checking last_synced and is_running...")
@@ -178,4 +175,52 @@ func main() {
 
 	// Additional logic based on rootFilePath, force, and syncFlag parameters
 	log.Printf("Command-line arguments - rootFilePath: %s, force: %t, sync: %t\n", rootFilePath, force, syncFlag)
+}
+
+func watchDir(rootFilePath string, force, syncFlag bool) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&fsnotify.Create == fsnotify.Create {
+					log.Println("New file detected:", event.Name)
+					runProcess(rootFilePath, force, syncFlag)
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				log.Println("error:", err)
+			}
+		}
+	}()
+
+	err = watcher.Add(rootFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	<-done
+}
+
+func main() {
+	logFile := setupLogging()
+	defer logFile.Close()
+
+	rootFilePath, force, syncFlag := parseFlags()
+
+	// Initial run
+	runProcess(rootFilePath, force, syncFlag)
+
+	// Watch for new files
+	watchDir(rootFilePath, force, syncFlag)
 }
