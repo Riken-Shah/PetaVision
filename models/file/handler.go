@@ -194,7 +194,7 @@ func DocumentsToRow(files []File) []Row {
 			ThumbnailPath: x,
 			Metadata: map[string]interface{}{
 				string(LastSynced): file.LastSynced,
-				string(FilePath):   "",
+				string(FilePath):   file.FilePath,
 			},
 		}
 		rmap[x] = true

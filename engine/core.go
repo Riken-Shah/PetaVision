@@ -89,8 +89,8 @@ func BeginOrResume(rootFilePath string) error {
 	log.Println("------- Generate Embeddings Completed --------")
 	log.Println("------- Sync Milvus --------")
 	// file.Reset()
-	// embFolder := filepath.Join(".local", "embs3")
-	// err = SyncMilvus(SyncProcessID, milvusUri, milvusUsername, milvusPassword, collectionName, embFolder)
+	embFolder := filepath.Join(".local", "embs3")
+	err = SyncMilvus(SyncProcessID, milvusUri, milvusUsername, milvusPassword, collectionName, embFolder)
 	log.Println("------- Sync Milvus Completed --------")
 	log.Println("------- All Process Completed --------")
 

@@ -38,19 +38,19 @@ class ImagesDataset(Dataset):
         return len(self.images_files)
 
     def __getitem__(self, index):
-        raw_fname = self.images_files[index]
+        raw_thumbnail_path = self.images_files[index]
         # fname = Path(self.images_path, raw_fname)
-        fname= raw_fname
+        thumbnail_path= raw_thumbnail_path
         
         try:
-            image = self.preprocess(Image.open(fname))
+            image = self.preprocess(Image.open(thumbnail_path))
         except Exception as e:
-            print(f"error reading {fname}, error as {e}")
+            print(f"error reading {thumbnail_path}, error as {e}")
             image = None
             return None
             # raise e
         # print("retur", str(raw_fname), "index: ", index, "lenL ", len(image))
-        return image, str(raw_fname)
+        return image, str(raw_thumbnail_path)
 
 
 class ImagesIndexer:
@@ -90,7 +90,6 @@ class ImagesIndexer:
                                                                          cache_dir=self.cache_dir, device=self.device)
             # model, _, preprocess = open_clip.create_model_and_transforms("ViT-L-14", pretrained="openai", cache_dir=self.cache_dir, device=self.device)
             # ViT - L - 14 / openai
-            print("loaded model")
             self.model = model.to(self.device)
             self.model.eval()
             self.context_length = self.model.context_length
@@ -147,7 +146,7 @@ class ImagesIndexer:
         print("Building index with CLIP. It may take a while...")
 
         def process_batch(batch):
-            images, fnames = batch
+            images, thumbnail_paths = batch
 
             with torch.no_grad():
                 images = images.to(self.device)
@@ -164,14 +163,14 @@ class ImagesIndexer:
             batch_records = []
             i = 0
             
-            for fname, image_tensor, emb in zip(fnames, images, emb_images):
-                image = Image.open(self.images_path / fname)
+            for thumbnail_path, image_tensor, emb in zip(thumbnail_paths, images, emb_images):
+                image = Image.open(self.images_path / thumbnail_path)
                 # image = to_pil_transform(image_tensor)
             #     # asyncio.run(generate_thumbnail(fname, image))
                 caption, tags = get_caption_and_tags(image)
                 width, height = image.size
-                batch_records.append(create_record(fname, width, height, emb, caption, tags))
-                save_path = os.path.join(embedding_folder, f"{os.path.basename(fname).split('.')[0]}.npy")
+                batch_records.append(create_record(thumbnail_path, width, height, emb, caption, tags))
+                save_path = os.path.join(embedding_folder, f"{os.path.basename(thumbnail_path).split('.')[0]}.npy")
                 i += 1
                 np.save(save_path, emb)
 
@@ -198,9 +197,9 @@ class ImagesIndexer:
         return records
 
     def _rglob_extension(self, extension):
-        for fname in chain.from_iterable(
+        for thumbnail_path in chain.from_iterable(
                 [self.images_path.rglob(extension), self.images_path.rglob(extension.upper())]):
-            yield fname.relative_to(self.images_path)
+            yield thumbnail_path.relative_to(self.images_path)
 
     def encode_prompt(self, prompt, normalize=False):
         # tokenizer = open_clip.get_tokenizer('ViT-L-14')

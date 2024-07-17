@@ -9,44 +9,52 @@ class Milvus:
         print("Connecting to milvus")
         connections.connect("default",
                             uri=milvus_uri,
-                            token="95d55a77bc7de1d9734368f7272f8d5db5672cbba7b62536d572e37c0ac9acad029c228e3ed4a5db0c1e6aafec399f730cc0fe8c",
+                            token="5f3f05f40d1a1062964e0054e010e8d02c6f65e37d586be90cef81525e109b0bc06cb1aa79797ad4869220f300c73a6209578417",
                             # user=user,
                             # password=password)
                             )
 
-        self.DIM = 512  # dimension of vector
+        self.DIM = 1024  # dimension of vector
         self._collection = None
         self._collection = self.setup_collection(collection_name)
         print("Successfully connected to Milvus")
 
     def setup_collection(self, collection_name) -> Collection:
-        check_collection = utility.has_collection(collection_name)
-        if check_collection:
-            collection = Collection(name=collection_name)
+        try:
+            check_collection = utility.has_collection(collection_name)
+            if check_collection:
+                collection = Collection(name=collection_name)
+                return collection
+
+            image_vector = FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.DIM,
+                                    description="vector which represents the image", )
+            fname = FieldSchema(name="fname", dtype=DataType.VARCHAR, max_length=512,
+                                description="path of the image", is_primary=True, auto_id=False)
+            keywords = FieldSchema(name="keywords", dtype=DataType.ARRAY, element_type=DataType.VARCHAR,max_length=300, max_capacity=50,
+                                    description="keywords for the image", )
+            manual_keywords = FieldSchema(name="manual_keywords", dtype=DataType.ARRAY,element_type=DataType.VARCHAR,max_length=50, max_capacity=50,
+                                    description="manual keywords for the image", )
+
+            metadata = FieldSchema(name="metadata", dtype=DataType.JSON, description="metadata of the image", )
+
+            schema = CollectionSchema(fields=[image_vector, fname, metadata, keywords, manual_keywords],
+                                    auto_id=False,
+                                    description="Textile Dev 01",
+                                    enable_dynamic_field=False)
+
+            collection = Collection(name=collection_name, schema=schema)
+
+            index_params = {
+                'metric_type': 'L2',
+                'index_type': "FLAT",
+                'params': {'nlist': 16384}
+            }
+            collection.create_index(field_name="embedding", index_params=index_params)
+            collection.load()
             return collection
-
-        image_vector = FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.DIM,
-                                   description="vector which represents the image", )
-        fname = FieldSchema(name="fname", dtype=DataType.VARCHAR, max_length=512,
-                            description="path of the image", is_primary=True, auto_id=False)
-
-        metadata = FieldSchema(name="metadata", dtype=DataType.JSON, description="metadata of the image", )
-
-        schema = CollectionSchema(fields=[image_vector, fname, metadata],
-                                  auto_id=False,
-                                  description="Textile Dev 01",
-                                  enable_dynamic_field=False)
-
-        collection = Collection(name=collection_name, schema=schema)
-
-        index_params = {
-            'metric_type': 'L2',
-            'index_type': "FLAT",
-            'params': {'nlist': 16384}
-        }
-        collection.create_index(field_name="embedding", index_params=index_params)
-        collection.load()
-        return collection
+        except Exception as e:
+            print("Error in setting up collection :", e)
+            raise(e)
 
     def get_total_count(self):
         self.setup_collection(self._collection.name)

@@ -35,7 +35,7 @@ class SyncDir:
             with open(json_file, 'r',encoding="utf-8") as f:
                 r = f.read()
                 rows = json.loads(r.replace('\\"', '"').replace('\\\\"', '\\"'))
-                print(f"ros is {len(rows)}")
+                print(f"rows is {len(rows)}")
                 for row in rows:
                     # file_name = Path(".local\\thumbnails2", os.path.basename(row["metadata"]["file_path"].split(".")[0] + ".jpeg"))
                     # thumbnail_path = file_name
@@ -51,7 +51,7 @@ class SyncDir:
                                       device=self.device)
 
         # VectorDB which acts as the index for the images
-        # self.milvus = Milvus(milvus_uri, milvus_username, milvus_password, collection_name=collection_name)
+        self.milvus = Milvus(milvus_uri, milvus_username, milvus_password, collection_name=collection_name)
 
     def _rglob_extension(self, extension):
         for fname in chain.from_iterable(
@@ -61,11 +61,11 @@ class SyncDir:
     def empty_function(self, *args, **kwargs):
         return
 
-    def create_record(self, fname, width, height, emb, caption, tags):
+    def create_record(self, thumbnail_path, width, height, emb, caption, tags):
         aspect_ratio = width / height
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return {
-            "fname": fname,
+            "thumbnail_path": thumbnail_path,
             "width": width,
             "height": height,
             "emb": emb,
@@ -80,13 +80,16 @@ class SyncDir:
         for record in records:
             record = {
                 "embedding": record["emb"],
-                "fname": str(record["fname"]),
+                "fname": str(self.rows_dict[record["thumbnail_path"]]["file_path"]),
+                "keywords": "",
+                "manual_keywords": "",
                 "metadata":{
                     "width": record["width"],
                     "height": record["height"],
                     "caption": record["caption"],
                     "tags": record["tags"],
-                    **self.rows_dict[record["fname"]]
+                    "thumbnail": record["thumbnail_path"],
+                    "last_synced_on": record["last_synced_on"]
                 }
             }
             # print("event: ", self.rows_dict[record["fname"]])
@@ -119,14 +122,15 @@ class SyncDir:
                 records = self.indexer.add_bulk(self.images_dir, images_files, self.create_record, self.empty_function,
                                                 self.captioner.get_caption_and_tags, self.embedding_folder)
                 # insert into milvus
-                # self.milvus.upsert(self.create_records_for_milvus(records))
+                    
+                self.milvus.upsert(self.create_records_for_milvus(records))
                 images_files = []
 
         if len(images_files) > 0:
             records = self.indexer.add_bulk(self.images_dir, images_files, self.create_record, self.empty_function,
                                             self.captioner.get_caption_and_tags, self.embedding_folder)
             # insert into milvus
-            # self.milvus.upsert(self.create_records_for_milvus(records))
+            self.milvus.upsert(self.create_records_for_milvus(records))
 
 
 if __name__ == '__main__':
