@@ -4,6 +4,7 @@ import (
 	"SyncEngine/models/dir"
 	"SyncEngine/models/file"
 	"SyncEngine/utils"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -37,8 +38,13 @@ func processFile(filePath string, wg *sync.WaitGroup) {
 		mutex.Lock()
 		f := file.File{}
 		f.FilePath = filePath
+		// if count, _ := file.CheckFileScanned(f.FilePath); count == 0 {
+		// 	filePaths = append(filePaths, f)
+		// }
 		filePaths = append(filePaths, f)
+
 		length := len(filePaths)
+		fmt.Printf("Length is :", length)
 		mutex.Unlock()
 
 		// Dump to CloverDB if the slice reaches a certain length

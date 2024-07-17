@@ -6,6 +6,7 @@ from pymilvus import connections, utility
 
 class Milvus:
     def __init__(self, milvus_uri, user, password, collection_name):
+        print("Connecting to milvus")
         connections.connect("default",
                             uri=milvus_uri,
                             token="95d55a77bc7de1d9734368f7272f8d5db5672cbba7b62536d572e37c0ac9acad029c228e3ed4a5db0c1e6aafec399f730cc0fe8c",

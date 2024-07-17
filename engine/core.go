@@ -53,24 +53,24 @@ func BeginOrResume(rootFilePath string) error {
 	//	return err
 	//}
 
-	if !SyncProcess.DirScanned {
-		if files, err := dir.FetchAll(SyncProcessID); err != nil {
-			return err
-		} else {
-			filePathsExits := map[string]bool{}
-			for _, document := range files {
-				filePathsExits[document.Get(string(dir.Path)).(string)] = true
+	// if !SyncProcess.DirScanned {
+	if files, err := dir.FetchAll(SyncProcessID); err != nil {
+		return err
+	} else {
+		filePathsExits := map[string]bool{}
+		for _, document := range files {
+			filePathsExits[document.Get(string(dir.Path)).(string)] = true
 
-			}
-			log.Println("------- Processing Dirs --------")
-			ProcessDirs(rootFilePath, SyncProcessID, filePathsExits, false)
-			log.Println("------- Processing Dirs Completed --------")
-			err := syncs.DirScannedCompleted(SyncProcess.ID)
-			if err != nil {
-				return err
-			}
+		}
+		log.Println("------- Processing Dirs --------")
+		ProcessDirs(rootFilePath, SyncProcessID, filePathsExits, false)
+		log.Println("------- Processing Dirs Completed --------")
+		err := syncs.DirScannedCompleted(SyncProcess.ID)
+		if err != nil {
+			return err
 		}
 	}
+	// }
 	log.Println("------- Generate Thumbnails --------")
 	thumbnailPath := filepath.Join(".local", "thumbnails3")
 	err = GenerateThumbnails(SyncProcessID, thumbnailPath)
@@ -89,8 +89,8 @@ func BeginOrResume(rootFilePath string) error {
 	log.Println("------- Generate Embeddings Completed --------")
 	log.Println("------- Sync Milvus --------")
 	// file.Reset()
-	embFolder := filepath.Join(".local", "embs3")
-	err = SyncMilvus(SyncProcessID, milvusUri, milvusUsername, milvusPassword, collectionName, embFolder)
+	// embFolder := filepath.Join(".local", "embs3")
+	// err = SyncMilvus(SyncProcessID, milvusUri, milvusUsername, milvusPassword, collectionName, embFolder)
 	log.Println("------- Sync Milvus Completed --------")
 	log.Println("------- All Process Completed --------")
 

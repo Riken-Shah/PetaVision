@@ -90,6 +90,7 @@ class ImagesIndexer:
                                                                          cache_dir=self.cache_dir, device=self.device)
             # model, _, preprocess = open_clip.create_model_and_transforms("ViT-L-14", pretrained="openai", cache_dir=self.cache_dir, device=self.device)
             # ViT - L - 14 / openai
+            print("loaded model")
             self.model = model.to(self.device)
             self.model.eval()
             self.context_length = self.model.context_length

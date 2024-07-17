@@ -3,6 +3,7 @@ module SyncEngine
 go 1.21
 
 require (
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/google/uuid v1.1.2
 	github.com/kshedden/gonpy v0.0.0-20210519231815-fa3c8dd8e59b
 	github.com/mattn/go-sqlite3 v1.14.19

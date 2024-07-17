@@ -16,7 +16,7 @@ func CreateCollectionIfNotExists(syncID string) error {
 	// Parameterized query for creating the table
 	createTableQuery := `
 		CREATE TABLE IF NOT EXISTS files (
-			file_path TEXT,
+			file_path TEXT UNIQUE,
 			last_synced INTEGER,
 			thumbnail_generated INTEGER DEFAULT 0,
 			thumbnail_path TEXT,
@@ -42,9 +42,34 @@ func CreateCollectionIfNotExists(syncID string) error {
 
 	return nil
 }
+
+func CheckFileScanned(filePath string) (int, error) {
+	query := `SELECT * FROM files WHERE file_path = '` + string(filePath) + `';`
+	rows, err := utils.DBClient.DBClient.Query(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	// Count the number of rows
+	count := 0
+	for rows.Next() {
+		count++
+	}
+
+	// Check for any errors encountered during iteration
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Number of rows: %d for %s \n", count, filePath)
+
+	return count, err
+}
+
 func InsertMany(syncID string, files []File) error {
 	// Prepare the SQL query
-	query := `INSERT INTO files (file_path, last_synced, thumbnail_generated, thumbnail_path, synced_to_vector_db) VALUES (?, ?, ?, ?, ?)`
+	query := `INSERT OR IGNORE INTO files (file_path, last_synced, thumbnail_generated, thumbnail_path, synced_to_vector_db) VALUES (?, ?, ?, ?, ?)`
 
 	for _, file := range files {
 		// query += ""
@@ -67,7 +92,7 @@ func InsertMany(syncID string, files []File) error {
 }
 
 func FetchAllForGeneratingThumbnails(syncID string) ([]string, error) {
-	q := `SELECT (file_path) FROM files  WHERE ` + string(ThumbnailGenerated) + ` = false;`
+	q := `SELECT (file_path) FROM files  WHERE ` + string(ThumbnailGenerated) + ` = 0;`
 	fmt.Println(q)
 	rows, err := utils.DBClient.DBClient.Query(q)
 

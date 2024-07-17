@@ -51,7 +51,7 @@ class SyncDir:
                                       device=self.device)
 
         # VectorDB which acts as the index for the images
-        self.milvus = Milvus(milvus_uri, milvus_username, milvus_password, collection_name=collection_name)
+        # self.milvus = Milvus(milvus_uri, milvus_username, milvus_password, collection_name=collection_name)
 
     def _rglob_extension(self, extension):
         for fname in chain.from_iterable(
