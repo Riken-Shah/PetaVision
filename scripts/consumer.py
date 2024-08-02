@@ -14,7 +14,7 @@ import base64
 import time  # Added for simulating delay
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate("./firebase_admin.json")
+cred = credentials.Certificate("./scripts/firebase_admin.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://ai-folder-default-rtdb.firebaseio.com',
     'storageBucket': 'ai-folder.appspot.com'
