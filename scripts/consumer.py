@@ -282,6 +282,7 @@ def upscale(firestore_id, ref_image, extra_params):
 
     first_iteration = True
     for i, multiplier in enumerate(multipliers):
+            print("Iteration number: ", i+1)
             print("Upscaling with scale_factor: ", multiplier)
             if not first_iteration:
                     creativity = creativity * 0.8

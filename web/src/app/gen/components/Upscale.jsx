@@ -6,7 +6,7 @@ import {fireTask} from "../../../../utils/helpers"
 
 export default function Upscale({orgUser,startLoading, endLoading, isDisabled}) {
     const fileRef = useRef();
-    const [scaleFactor, setScaleFactor] = useState(4);
+    const [scaleFactor, setScaleFactor] = useState(2);
     const [uploadedURL, setUploadedURL] = useState();
     const [creativity, setCreativity] = useState(0.35);
 
@@ -62,7 +62,7 @@ return (
                 color="foreground"
                 step={0.5}
                 showSteps={true}
-                maxValue={8}
+                maxValue={4}
                 minValue={1}
                 value={scaleFactor}
                 onChange={setScaleFactor}
@@ -71,14 +71,14 @@ return (
         </div>
         <div className="w-full mb-4">
             <label className="w-full flex flex-col gap-2 p-10">
-                Creativity: {creativity}%
+                Creativity: {creativity} - 0.35 is the default value
             </label>
             <Slider 
                 aria-label="Creativity"
                 color="foreground"
                 step={0.05}
                 showSteps={true}
-                maxValue={3}
+                maxValue={2}
                 minValue={0}
                 value={creativity}
                 onChange={setCreativity}
