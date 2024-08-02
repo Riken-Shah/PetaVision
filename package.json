@@ -1,9 +1,18 @@
 {
 	"dependencies": {
+		"@nextui-org/react": "^2.4.6",
 		"ag-psd": "^19.0.1",
+		"autoprefixer": "^10.4.19",
+		"axios": "^1.7.2",
+		"blurhash": "^2.0.5",
 		"canvas": "^2.11.2",
 		"color-supreme": "^0.1.4",
+		"firebase": "^10.12.4",
 		"image-size": "^1.1.1",
-		"pixel-paradise": "^0.0.1"
+		"next": "^14.2.5",
+		"pixel-paradise": "^0.0.1",
+		"react-firebaseui": "^6.0.0",
+		"tailwindcss": "^3.4.7",
+		"yarn": "^1.22.22"
 	}
 }

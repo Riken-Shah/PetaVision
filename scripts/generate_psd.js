@@ -3,7 +3,7 @@
   const { createCanvas, loadImage } = require('canvas');
   const { initializeCanvas, writePsd, readPsd } = require('ag-psd');
   const { promisify } = require('util');
-  const sizeOf = promisify(require('image-size'));const psdFilePath = 'layering/runs/results/sample/26bbaa8d-dba8-484c-9fcf-f753da46c91b.jpeg/output.psd';const outputFolder = 'layering/runs/results/sample/26bbaa8d-dba8-484c-9fcf-f753da46c91b.jpeg/layers';
+  const sizeOf = promisify(require('image-size'));const psdFilePath = 'layering/runs/outputs/cad6a777-fe8a-49c5-98b7-748aa68d2062.png/output.psd';const outputFolder = 'layering/runs/outputs/cad6a777-fe8a-49c5-98b7-748aa68d2062.png';
   async function generatePSD() {
     const imageFiles = fs.readdirSync(outputFolder).map(file => `${outputFolder}/${file}`);
 
@@ -48,6 +48,10 @@
 
       psdChildren.push(layer);
     }
+     
+     
+     psdChildren.push({...psdChildren[0]})
+     psdChildren[psdChildren.length -1].blendMode = "luminosity";
 
     // Create the PSD object
     const psd = {
