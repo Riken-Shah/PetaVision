@@ -14,13 +14,13 @@ import base64
 import time  # Added for simulating delay
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate("./firebase_admin.json")
+cred = credentials.Certificate("./scripts/firebase_admin.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://ai-folder-default-rtdb.firebaseio.com',
     'storageBucket': 'ai-folder.appspot.com'
 })
 
-# Reference to the Realtime Database
+# Reference to the Realtime Database 
 db_ref = db.reference('tasks')
 
 # Reference to the consumer count
