@@ -14,7 +14,7 @@ config.ini
 scripts/__pycache__/
 scripts/*.pyc
 
-web/firebase_admin.json
+scripts/firebase_admin.json
 
 
 scripts/layering/old_runs/**
