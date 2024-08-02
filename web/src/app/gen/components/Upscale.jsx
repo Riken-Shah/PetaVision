@@ -78,7 +78,7 @@ return (
                 color="foreground"
                 step={0.05}
                 showSteps={true}
-                maxValue={2}
+                maxValue={1}
                 minValue={0}
                 value={creativity}
                 onChange={setCreativity}
