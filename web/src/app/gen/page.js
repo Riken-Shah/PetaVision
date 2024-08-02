@@ -109,19 +109,19 @@ export default function App() {
                 {/*        </div>*/}
                 {/*    }*/}
                 {/*>*/}
-                {/*<Text2Img orgUser={orgUser} isDisabled={isDisabled} styles={styles} />*/}
+                {/* <Text2Img orgUser={orgUser} isDisabled={isDisabled} styles={styles} /> */}
                 {/*</Tab>*/}
-                {/*<Tab*/}
-                {/*    key="upscale"*/}
-                {/*    title={*/}
-                {/*        <div className="flex items-center space-x-2">*/}
-                {/*            <GalleryIcon/>*/}
-                {/*            <span>Upscale</span>*/}
-                {/*        </div>*/}
-                {/*    }*/}
-                {/*>*/}
-                {/*    <Upscale isDisabled={isDisabled}  orgUser={orgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>*/}
-                {/*</Tab>*/}
+                <Tab
+                   key="upscale"
+                   title={
+                       <div className="flex items-center space-x-2">
+                           <GalleryIcon/>
+                           <span>Upscale</span>
+                       </div>
+                   }
+                >
+                   <Upscale isDisabled={isDisabled}  orgUser={orgUser} startLoading={loadingModelOnOpen} endLoading={loadingModelOnClose}/>
+                </Tab>
                 <Tab
                     key="layering"
                     title={

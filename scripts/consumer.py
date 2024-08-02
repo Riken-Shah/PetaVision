@@ -2,7 +2,7 @@ import os
 import pathlib
 import threading
 from collections import defaultdict
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 import firebase_admin
 from firebase_admin import credentials, db, storage, firestore
@@ -60,11 +60,23 @@ def simulate_api_call():
     }
 
 
-def upload_image(base64_string, firestore_id, index):
+def upload_image(base64_string, firestore_id, index, task_type="layering", scale_factor=4, creativity=35, input_img_url: str= None):
     # Decode the base64 string to get the image content
     img_blob = base64.b64decode(base64_string)
+    if task_type=="upscale":
+        parsed_url = urlparse(input_img_url)
 
-    img_filename = f"tasks/{firestore_id}/{index + 1}.jpg"
+        # Extract the path from the URL
+        path = parsed_url.path
+
+        # Decode the path to handle any URL-encoded characters
+        decoded_path = unquote(path)
+
+        # Extract the filename from the path
+        filename = (decoded_path.split('/')[-1]).replace(".jpeg","").replace(".jpg","").replace(".png","").replace(".tif","")
+        img_filename = f"tasks/{firestore_id}/{filename}_upscaled_{scale_factor}_{creativity}.jpg"
+    else:
+        img_filename = f"tasks/{firestore_id}/{index + 1}.jpg"
     blob = bucket.blob(img_filename)
 
     # Set mimetype to 'image/jpeg' (modify accordingly based on your image type)
@@ -117,8 +129,8 @@ def deduct_credits(org_id, deducted_credits=1):
         org_ref.update({'credits': new_credits})
 
 
-AUTOMATIC1111_URL = "https://11d2-34-123-151-87.ngrok-free.app/"
-
+# AUTOMATIC1111_URL = "https://11d2-34-123-151-87.ngrok-free.app/"
+AUTOMATIC1111_URL = "http://localhost:7861"
 
 def text2img(firestore_id, prompt, negative_prompt, count, extra_params):
     headers = {'Content-Type': 'application/json'}
@@ -146,7 +158,7 @@ def text2img(firestore_id, prompt, negative_prompt, count, extra_params):
     images = response.json()['images']
 
     # Upload images to Firebase Storage
-    img_urls = [upload_image(img_url, firestore_id, i) for i, img_url in enumerate(images)]
+    img_urls = [upload_image(img_url, firestore_id, i, "txt2img") for i, img_url in enumerate(images)]
     return img_urls
 
 
@@ -243,40 +255,97 @@ def img2img(firestore_id, ref_image, prompt, negative_prompt, count, extra_param
     images = response.json()['images']
 
     # Upload images to Firebase Storage
-    img_urls = [upload_image(img_url, firestore_id, i) for i, img_url in enumerate(images)]
+    img_urls = [upload_image(img_url, firestore_id, i, "img2img") for i, img_url in enumerate(images)]
     return img_urls
 
+def calc_scale_factors(value):
+    lst = []
+    while value >= 2:
+        lst.append(2)
+        value /= 2
+    if value > 1:
+        lst.append(value)
+    return lst
 
 def upscale(firestore_id, ref_image, extra_params):
+
     headers = {'Content-Type': 'application/json'}
-    payload = {
-        "resize_mode": 0,
-        "show_extras_results": "false",
-        "gfpgan_visibility": 0,
-        "codeformer_visibility": 0,
-        "codeformer_weight": 0,
-        "upscaling_resize": 2,
-        # "upscaling_resize_w": 1024,
-        # "upscaling_resize_h": 1024,
-        "upscaling_crop": "true",
-        "upscaler_1": "SwinIR_4x",
-        "upscaler_2": "None",
-        "extras_upscaler_2_visibility": 0,
-        "upscale_first": "true",
-        "image": convert_img_to_base64(ref_image)
-    }
+    prompt = "masterpiece, best quality, highres, <lora:more_details:0.5> <lora:SDXLrender_v2.0:1>"
+    seed = 1337
+    creativity= extra_params["creativity"]
 
-    response = requests.post(f'{AUTOMATIC1111_URL}sdapi/v1/extra-single-image', headers=headers,
-                             data=json.dumps(payload), timeout=900)
-    if response.status_code != 200:
-        print("Failed to generate image with following error", response.json())
-        raise Exception("Failed to generate image")
+    multipliers = [extra_params["scale_factor"]]
+    if extra_params["scale_factor"] > 2:
+        multipliers = calc_scale_factors(extra_params["scale_factor"])
+        print("Upscale your image " + str(len(multipliers)) + " times")
+    base64_image = convert_img_to_base64(ref_image)
 
-    image = response.json()['image']
+    first_iteration = True
+    for i, multiplier in enumerate(multipliers):
+            print("Upscaling with scale_factor: ", multiplier)
+            if not first_iteration:
+                    creativity = creativity * 0.8
+                    seed = seed +1
+            first_iteration = False
+                 # Prepare the payload
+            payload = {
+                        "init_images": [base64_image],
+                        "prompt": prompt,
+                        "negative_prompt": "(worst quality, low quality, normal quality:2) JuggernautNegative-neg",
+                        "steps": 18,
+                        "sampler_name": "DPM++ 3M SDE Karras",
+                        "cfg_scale": 6,
+                        "denoising_strength": creativity,
+                        "width": 1024,
+                        "height": 1024,
+                        "seed": seed,
+                        "override_settings": {
+                            "sd_model_checkpoint": "juggernaut_reborn.safetensors [338b85bc4f]",
+                            "sd_vae": "vae-ft-mse-840000-ema-pruned.safetensors",
+                            "CLIP_stop_at_last_layers": 1,
+                        },
+                        "alwayson_scripts": {
+                            "Tiled Diffusion": {
+                                "args": [True, "MultiDiffusion", True, True, 112, 144, 112, 144, 4, 8, "4x-UltraSharp", multiplier, False, 0, 0.0, 3]
+                            },
+                            "Tiled VAE": {
+                                "args": [True, 2048, 192, True, True, True, True]
+                            },
+                            "controlnet": {"args":[ {
+                    "enabled": True,
+                    "module": "tile_resample",
+                    "model": "control_v11f1e_sd15_tile [a371b31b]",
+                    "weight": 0.6,
+                    "image": base64_image,
+                    "resize_mode": "Crop and Resize",
+                    "low_vram": False,
+                    "downsample": 1.0,
+                    "guidance_start": 0.0,
+                    "guidance_end": 1.0,
+                    "control_mode": "Balanced",
+                    "pixel_perfect": True,
+                    "threshold_a": 1,
+                    "threshold_b": 0.5,
+                    "save_detected_map": False,
+                    "processor_res": 512,
+                                    }
+                                ]   
+                            }
+                        }
+                    }
+        # response = requests.post(f'{AUTOMATIC1111_URL}sdapi/v1/extra-single-image', headers=headers,
+                            #  data=json.dumps(payload), timeout=900)
 
-    # Upload images to Firebase Storage
-    img_urls = [upload_image(img_url, firestore_id, i) for i, img_url in enumerate([image])]
+            response = requests.post(f"{AUTOMATIC1111_URL}/sdapi/v1/img2img", json=payload)
+            response.raise_for_status()
+            if response.status_code != 200:
+                print("Failed to generate image with following error", response.json())
+                raise Exception("Failed to generate image")
+            base64_image = response.json()['images'][0]
+
+    img_urls = [upload_image(base64_string, firestore_id, i,"upscale", extra_params["scale_factor"], extra_params["creativity"],  ref_image) for i, base64_string in enumerate([base64_image])]
     return img_urls
+    
 
 
 def layering(firestore_id, ref_image, extra_params):
