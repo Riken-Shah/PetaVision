@@ -128,6 +128,32 @@ def deduct_credits(org_id, deducted_credits=1):
         new_credits = current_credits - deducted_credits
         org_ref.update({'credits': new_credits})
 
+def track_progress():
+    while True:
+        try:
+            progress_response = requests.get(f"{AUTOMATIC1111_URL}/sdapi/v1/progress")
+            progress_response.raise_for_status()
+            progress_data = progress_response.json()
+            
+            progress = progress_data.get('progress', 0)
+            eta = progress_data.get('eta_relative', 0)
+            current_step = progress_data.get('state', {}).get('sampling_step', 0)
+            total_steps = progress_data.get('state', {}).get('sampling_steps', 1)
+            
+            status = progress_data.get('state', {}).get('job', 'Unknown')
+            
+            print(f"Status: {status}")
+            print(f"Progress: {progress:.2%}")
+            print(f"Step: {current_step}/{total_steps}")
+            print(f"ETA: {eta:.2f} seconds")
+            print("-----------------")
+            if progress >= 1.0:
+                print("Processing complete!")
+                break
+            time.sleep(1)  # Wait for 1 second before checking again
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching progress: {e}")
+            break
 
 # AUTOMATIC1111_URL = "https://11d2-34-123-151-87.ngrok-free.app/"
 AUTOMATIC1111_URL = "http://localhost:7861"
@@ -292,7 +318,7 @@ def upscale(firestore_id, ref_image, extra_params):
             payload = {
                         "init_images": [base64_image],
                         "prompt": prompt,
-                        "negative_prompt": "(worst quality, low quality, normal quality:2) JuggernautNegative-neg",
+                        "negative_prompt": "no faces, no eyes, no human features, no people, no body parts, no human-like elements, (worst quality, low quality, normal quality:2) JuggernautNegative-neg",
                         "steps": 18,
                         "sampler_name": "DPM++ 3M SDE Karras",
                         "cfg_scale": 6,
@@ -337,11 +363,13 @@ def upscale(firestore_id, ref_image, extra_params):
         # response = requests.post(f'{AUTOMATIC1111_URL}sdapi/v1/extra-single-image', headers=headers,
                             #  data=json.dumps(payload), timeout=900)
 
-            response = requests.post(f"{AUTOMATIC1111_URL}/sdapi/v1/img2img", json=payload)
+            response = requests.post(f"{AUTOMATIC1111_URL}/sdapi/v1/img2img", json=payload, timeout= 600)
             response.raise_for_status()
             if response.status_code != 200:
                 print("Failed to generate image with following error", response.json())
                 raise Exception("Failed to generate image")
+            
+            track_progress()
             base64_image = response.json()['images'][0]
 
     img_urls = [upload_image(base64_string, firestore_id, i,"upscale", extra_params["scale_factor"], extra_params["creativity"],  ref_image) for i, base64_string in enumerate([base64_image])]
