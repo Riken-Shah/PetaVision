@@ -10,7 +10,7 @@ export default function Images({ task }) {
         case "img2img":
             setText("Searching for")
             break
-        case "upscaling":
+        case "upscale":
             setText("Upscaling for")
             break
         case "layering":
