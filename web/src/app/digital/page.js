@@ -87,7 +87,7 @@ export default function LayeringComponent() {
           n_layers: -1, // Always use auto layers
         }
       });
-      setCooldownTimer(10); // Set cooldown to 10 seconds
+      setCooldownTimer(60 * 5); // Set cooldown to 10 seconds
     } catch (error) {
       console.error("Error submitting task:", error);
     } finally {
@@ -98,86 +98,88 @@ export default function LayeringComponent() {
   const isTaskRunning = activeTask && activeTask.status !== "completed";
 
   return (
-    <Card className="w-full max-w-md mx-auto bg-gray-800 text-white">
-      <CardBody className="flex flex-col items-center gap-4">
-        <Chip className="self-end mb-2">Credits: {orgUser?.org?.credits ?? 0}</Chip>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="hidden"
-        />
-        <Button
-          color="primary"
-          onPress={() => fileInputRef.current.click()}
-          disabled={isDisabled || isLoading || cooldownTimer > 0}
-        >
-          {isLoading ? "Uploading..." : 
-           cooldownTimer > 0 ? `Cooldown: ${cooldownTimer}s` : "Upload Image"}
-        </Button>
-
-        <div className="w-full aspect-square relative">
-          {taskImage ? (
-            <img
-              src={taskImage}
-              alt="Task image"
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                console.error("Error loading task image:", e);
-                e.target.src = "https://via.placeholder.com/400?text=Task+Image+Load+Error";
-              }}
-            />
-          ) : uploadedURL ? (
-            <img
-              src={uploadedURL}
-              alt="Uploaded image"
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                console.error("Error loading image:", e);
-                e.target.src = "https://via.placeholder.com/400?text=Image+Load+Error";
-              }}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-700 text-white">
-              No image uploaded or task in progress
-            </div>
-          )}
-          {isTaskRunning && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-              <CircularProgress aria-label="Loading..." />
-            </div>
-          )}
-        </div>
-
-        {(cooldownTimer > 0 || isTaskRunning) && (
-          <Progress
-            aria-label="Cooldown or Task Progress"
-            size="sm"
-            value={isTaskRunning ? activeTask.progress || 0 : 100 - (cooldownTimer / 10) * 100}
-            color={isTaskRunning ? "primary" : "warning"}
-            className="w-full"
+    <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
+      <Card className="w-full max-w-md mx-auto bg-gray-800 text-white">
+        <CardBody className="flex flex-col items-center gap-4">
+          <Chip className="self-end mb-2">Credits: {orgUser?.org?.credits ?? 0}</Chip>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
           />
-        )}
+          <Button
+            color="primary"
+            onPress={() => fileInputRef.current.click()}
+            disabled={isDisabled || isLoading || cooldownTimer > 0}
+          >
+            {isLoading ? "Uploading..." : 
+             cooldownTimer > 0 ? `Cooldown: ${cooldownTimer}s` : "Upload Image"}
+          </Button>
 
-        {isTaskRunning && cooldownTimer === 0 && (
-          <p className="text-small text-warning text-center">
-            Task is still processing. You can upload a new image if you'd like.
+          <div className="w-full aspect-square relative">
+            {taskImage ? (
+              <img
+                src={taskImage}
+                alt="Task image"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  console.error("Error loading task image:", e);
+                  e.target.src = "https://via.placeholder.com/400?text=Task+Image+Load+Error";
+                }}
+              />
+            ) : uploadedURL ? (
+              <img
+                src={uploadedURL}
+                alt="Uploaded image"
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  console.error("Error loading image:", e);
+                  e.target.src = "https://via.placeholder.com/400?text=Image+Load+Error";
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-700 text-white">
+                No image uploaded or task in progress
+              </div>
+            )}
+            {isTaskRunning && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                <CircularProgress aria-label="Loading..." />
+              </div>
+            )}
+          </div>
+
+          {(cooldownTimer > 0 || isTaskRunning) && (
+            <Progress
+              aria-label="Cooldown or Task Progress"
+              size="sm"
+              value={isTaskRunning ? activeTask.progress || 0 : 100 - (cooldownTimer / 10) * 100}
+              color={isTaskRunning ? "primary" : "warning"}
+              className="w-full"
+            />
+          )}
+
+          {isTaskRunning && cooldownTimer === 0 && (
+            <p className="text-small text-warning text-center">
+              Task is still processing. You can upload a new image if you'd like.
+            </p>
+          )}
+
+          <p className="text-small text-gray-400 text-center">
+            2 credits will be used for this operation
           </p>
-        )}
 
-        <p className="text-small text-gray-400 text-center">
-          2 credits will be used for this operation
-        </p>
-
-        {downloadUrl && (
-          <Link href={downloadUrl} isExternal>
-            <Button color="success">
-              Download PSD
-            </Button>
-          </Link>
-        )}
-      </CardBody>
-    </Card>
+          {downloadUrl && (
+            <Link href={downloadUrl} isExternal>
+              <Button color="success">
+                Download PSD
+              </Button>
+            </Link>
+          )}
+        </CardBody>
+      </Card>
+    </div>
   );
 }
