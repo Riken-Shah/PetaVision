@@ -18,7 +18,7 @@ const firebaseAuthConfig = {
             },
         },
     ],
-    signInSuccessUrl: "/",
+    signInSuccessUrl: "/digital",
     credentialHelper: "none",
     callbacks: {
         // https://github.com/firebase/firebaseui-web#signinsuccesswithauthresultauthresult-redirecturl
@@ -32,7 +32,8 @@ const firebaseAuthConfig = {
             // auth state in withAuthComponent.js.
             // return false;
             // location.
-            return "/"
+            return "/digital"
+            // return false;
         },
     },
 };
@@ -51,7 +52,7 @@ const FirebaseAuth = () => {
         <div>
             { renderAuth ? (
                 <StyledFirebaseAuth
-                    uiConfig={{...firebaseAuthConfig, signInSuccessUrl: "/" + (new URL(document.location)).search}}
+                    uiConfig={{...firebaseAuthConfig, signInSuccessUrl: "/digital" + (new URL(document.location)).search}}
                     firebaseAuth={auth}
                 />
             ) : null}

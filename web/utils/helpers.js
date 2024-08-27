@@ -61,7 +61,7 @@ export async function createOrgUser(orgID) {
     const snap = {
         org_id: orgID.trim(),
         user_id: auth.currentUser.uid,
-        role: 4,
+        role: 3,
     }
     console.log("trying to create snap", snap)
     await setDoc(doc(db, "org_users", auth.currentUser.uid), snap)
