@@ -140,6 +140,17 @@ export default function LayeringComponent() {
     }
   };
 
+  useEffect(() => {
+    if (user && orgUser) {
+      getCurrentTasks((t )=> {
+        if (t.type === "layering") {
+          setActiveTask(t)
+          setTaskImage(t.ref_image)  
+        }
+      })
+    }
+  }, [user, orgUser]);
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
       <Card className="w-full max-w-md mx-auto bg-gray-800 text-white">
