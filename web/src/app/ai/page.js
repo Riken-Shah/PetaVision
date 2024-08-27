@@ -276,7 +276,35 @@ export default function AIComponent() {
 
   const handleDownload = () => {
     if (downloadUrl) {
-      window.open(downloadUrl, '_blank');
+      if (activeTab === 'layering') {
+        console.log("Attempting to download PSD file:", downloadUrl);
+        fetch(downloadUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'layered_image.psd';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            console.log("PSD download initiated");
+          })
+          .catch(error => {
+            console.error("Error downloading PSD:", error);
+            alert("Failed to download PSD. Please try again.");
+          });
+      } else {
+        window.open(downloadUrl, '_blank');
+      }
+    } else {
+      console.error("Download URL is not available");
     }
   };
 
@@ -339,17 +367,20 @@ export default function AIComponent() {
 
     if (activeTab === 'layering') {
       return (
-        <Button 
-          color="primary" 
-          onPress={handleDownload}
-          className="mt-4"
-        >
-          Download PSD
-        </Button>
+        <div className="mt-4 flex flex-col items-center">
+          <p className="text-green-500 mb-2">Process completed!</p>
+          <Button 
+            color="primary" 
+            onPress={handleDownload}
+          >
+            Download PSD
+          </Button>
+        </div>
       );
     } else if (activeTab === 'upscale') {
       return (
         <div className="w-full mt-4">
+          <p className="text-green-500 text-center mb-2">Process completed!</p>
           <img
             src={downloadUrl}
             alt="Result image"
