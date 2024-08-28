@@ -276,33 +276,7 @@ export default function AIComponent() {
 
   const handleDownload = () => {
     if (downloadUrl) {
-      if (activeTab === 'layering') {
-        console.log("Attempting to download PSD file:", downloadUrl);
-        fetch(downloadUrl)
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.blob();
-          })
-          .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'layered_image.psd';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            console.log("PSD download initiated");
-          })
-          .catch(error => {
-            console.error("Error downloading PSD:", error);
-            alert("Failed to download PSD. Please try again.");
-          });
-      } else {
-        window.open(downloadUrl, '_blank');
-      }
+      window.open(downloadUrl, '_blank');
     } else {
       console.error("Download URL is not available");
     }
