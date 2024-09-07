@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useRef, useEffect } from 'react';
-import { Button, Slider, Card, CardBody, Progress, CircularProgress, Chip, Link, Tabs, Tab } from "@nextui-org/react";
+import { Button, Slider, Card, CardBody, Progress, CircularProgress, Chip, Link, Tabs, Tab, Switch } from "@nextui-org/react";
 import { fileUpload } from "../../../utils/upload";
 import { fireTask, getCurrentTasks, getOrgUser, createOrgUser } from "../../../utils/helpers";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -10,6 +10,10 @@ import OrganizationModal from "@/app/components/OrganizationModal";
 import InsufficientModal from "@/app/components/InsufficientModal";
 import NotOnWorkspaceModal from "@/app/components/NotOnWorkspace";
 import { useSearchParams } from 'next/navigation';
+
+function rgbToHex(r, g, b) {
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
 
 async function fetchInitPostAuthenticated(orgID, setOrgUser, orgModalOnOpen) {
   const orgUserExists = await getOrgUser()
@@ -51,6 +55,11 @@ export default function AIComponent() {
   const [isCooldownActive, setIsCooldownActive] = useState(false);
   const [activeTab, setActiveTab] = useState("layering");
   const [isQueuedAfterCooldown, setIsQueuedAfterCooldown] = useState(false);
+  const [isManualMode, setIsManualMode] = useState(false);
+  const [selectedColors, setSelectedColors] = useState(Array(6).fill('#FFFFFF'));
+  const [activeColorIndex, setActiveColorIndex] = useState(null);
+  const canvasRef = useRef(null);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   const searchParams = useSearchParams();
 
@@ -123,6 +132,14 @@ export default function AIComponent() {
       checkExistingTask();
     }
   }, [user, orgUser, activeTab]);
+
+  useEffect(() => {
+    if (activeTask && activeTask.extraParams && activeTask.extraParams.colors) {
+      setSelectedColors(Object.values(activeTask.extraParams.colors).map(color => 
+        rgbToHex(color[0], color[1], color[2])
+      ));
+    }
+  }, [activeTask]);
 
   const checkExistingTask = async () => {
     try {
@@ -228,6 +245,125 @@ export default function AIComponent() {
     }
   };
 
+  const handleModeToggle = (isSelected) => {
+    setIsManualMode(isSelected);
+    if (!isSelected && isImageLoaded) {
+      selectAutomaticColors();
+    }
+  };
+
+  useEffect(() => {
+    const imageToLoad = activeTask?.ref_image || uploadedURL;
+    if (imageToLoad) {
+      console.log("Attempting to load image from URL:", imageToLoad);
+      setIsImageLoaded(false);
+      const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageToLoad)}`;
+      console.log("Proxy URL:", proxyUrl);
+      drawImageOnCanvas(proxyUrl);
+    }
+  }, [uploadedURL, activeTask]);
+
+  const drawImageOnCanvas = (url) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      setIsImageLoaded(true);
+      console.log("Image loaded and drawn on canvas");
+      if (!isManualMode) {
+        selectAutomaticColors();
+      }
+    };
+    img.onerror = (error) => {
+      console.error("Error loading image:", error);
+      setIsImageLoaded(false);
+    };
+    img.src = url;
+  };
+
+  const handleCanvasClick = (event) => {
+    console.log("Canvas clicked");
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.log("Canvas ref is null");
+      return;
+    }
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+  
+    // Calculate the scale of the canvas
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+  
+    // Apply the scale to get the actual coordinates on the canvas
+    const canvasX = Math.floor(x * scaleX);
+    const canvasY = Math.floor(y * scaleY);
+
+    console.log("Click coordinates on canvas:", canvasX, canvasY);
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.log("Unable to get 2D context");
+      return;
+    }
+
+    try {
+      const imageData = ctx.getImageData(canvasX, canvasY, 1, 1).data;
+      console.log("Raw image data:", imageData);
+      const hexColor = rgbToHex(imageData[0], imageData[1], imageData[2]);
+      console.log("Clicked color:", hexColor);
+
+      if (isManualMode && activeColorIndex !== null && isImageLoaded) {
+        setSelectedColors(prevColors => {
+          const newColors = [...prevColors];
+          newColors[activeColorIndex] = hexColor;
+          return newColors;
+        });
+        setActiveColorIndex(null);
+      }
+    } catch (error) {
+      console.error("Error getting image data:", error);
+    }
+  };
+
+  const selectAutomaticColors = () => {
+    if (!canvasRef.current || !isImageLoaded) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+
+    // Simple color quantization
+    const colorMap = {};
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = Math.floor(pixels[i] / 32) * 32;
+      const g = Math.floor(pixels[i + 1] / 32) * 32;
+      const b = Math.floor(pixels[i + 2] / 32) * 32;
+      const key = `${r},${g},${b}`;
+      colorMap[key] = (colorMap[key] || 0) + 1;
+    }
+
+    const sortedColors = Object.entries(colorMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([key]) => {
+        const [r, g, b] = key.split(',').map(Number);
+        return rgbToHex(r, g, b);
+      });
+
+    setSelectedColors(sortedColors);
+  };
+
   const handleSubmit = async () => {
     if (isSubmitDisabled) return;
 
@@ -237,12 +373,22 @@ export default function AIComponent() {
     setIsCooldownActive(true);
     try {
       if (activeTab === "layering") {
+        const extraParams = {
+          n_layers: -1,
+          manual_mode: isManualMode,
+        };
+        if (isManualMode) {
+          extraParams.colors = selectedColors.reduce((acc, color, index) => {
+            const [r, g, b] = color.slice(1).match(/.{2}/g).map(x => parseInt(x, 16));
+            acc[index + 1] = [r, g, b, 255];
+            return acc;
+          }, {});
+        }
+        extraParams.image_size = { width: canvasRef.current.width, height: canvasRef.current.height };
         await fireTask("layering", orgUser.org_id, {
           count: 1,
           refImage: uploadedURL,
-          extraParams: {
-            n_layers: -1,
-          }
+          extraParams: extraParams
         });
       } else {
         await fireTask("upscale", orgUser.org_id, {
@@ -299,37 +445,33 @@ export default function AIComponent() {
   };
 
   const renderTaskImage = () => {
-    let imageToShow = uploadedURL;
-    
-    if (activeTask) {
-      if (activeTask.type === activeTab) {
-        imageToShow = activeTask.ref_image || uploadedURL;
-      } else {
-        // If there's an active task but it's not for the current tab, don't show an image
-        imageToShow = null;
-      }
-    }
+    const imageToShow = activeTask?.ref_image || uploadedURL;
 
     return (
       <div className="w-full aspect-square relative">
-        {imageToShow ? (
-          <img
-            src={imageToShow}
-            alt="Task image"
-            className="w-full h-full object-contain"
-            onError={(e) => {
-              console.error("Error loading task image:", e);
-              e.target.src = "https://via.placeholder.com/400?text=Task+Image+Load+Error";
-            }}
-          />
-        ) : (
+        <canvas
+          ref={canvasRef}
+          onClick={handleCanvasClick}
+          style={{
+            cursor: isManualMode ? 'crosshair' : 'default',
+            width: '100%',
+            height: '100%',
+            display: imageToShow ? 'block' : 'none'
+          }}
+        />
+        {!imageToShow && (
           <div className="w-full h-full flex items-center justify-center bg-gray-700 text-white">
-            {activeTask ? "Switch tabs to view the active task image" : "No image uploaded"}
+            No image uploaded
           </div>
         )}
-        {isProcessing && activeTask?.type === activeTab && (
+        {isProcessing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
             <CircularProgress aria-label="Loading..." />
+          </div>
+        )}
+        {!isImageLoaded && imageToShow && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white">
+            Loading image...
           </div>
         )}
       </div>
@@ -372,7 +514,7 @@ export default function AIComponent() {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-900 p-4">
       <Card className="w-full max-w-md mx-auto bg-gray-800 text-white">
-        <CardBody className="flex flex-col items-center gap-4">
+        <CardBody className="flex flex-col items-center">
           {user ? (
             <>
               <div className="w-full flex justify-between items-center mb-4">
@@ -422,6 +564,37 @@ export default function AIComponent() {
               </Button>
 
               {renderTaskImage()}
+
+              {activeTab === "layering" && (
+                <div className="w-full flex flex-col items-center mt-4">
+                  <div className="flex items-center mb-2">
+                    <span>Automatic</span>
+                    <Switch isSelected={isManualMode} onValueChange={handleModeToggle} className="mx-2" />
+                    <span>Manual</span>
+                  </div>
+                  
+                  {(isManualMode || (activeTask && activeTask.extraParams && activeTask.extraParams.colors)) && (
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {selectedColors.map((color, index) => (
+                        <div key={index} className="flex items-center">
+                          <Button
+                            auto
+                            size="sm"
+                            color={activeColorIndex === index ? "primary" : "default"}
+                            onPress={() => setActiveColorIndex(index)}
+                          >
+                            {index + 1}
+                          </Button>
+                          <div
+                            className="w-6 h-6 border border-gray-300 ml-2"
+                            style={{ backgroundColor: color }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {activeTab === "upscale" && (
                 <>
