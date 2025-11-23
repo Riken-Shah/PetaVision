@@ -1,10 +1,20 @@
 # PetaVision
 
+
+![PetaVison demo](./demo.png)
+
 **A Fullstack NAS Image Indexing & AI Search System**
 
-PetaVision is a high-performance, scalable fullstack application designed for Network Attached Storage (NAS) environments. This system can efficiently index massive image collections (tested with 100TB+ datasets) and provides semantic search capabilities using AI embeddings.
+PetaVision is a high-performance, scalable fullstack application which efficiently index massive image collections (tested with 100TB+ datasets) and provides semantic search capabilities using AI embeddings to Network Attached Storage (NAS).
+
+**Built for Textile Manufacturers**: PetaVision is specifically designed to help textile manufacturers manage their petabyte-scale image libraries. Whether you're a designer creating new patterns, a sales person presenting to clients, or any stakeholder in the textile industry - find the right design instantly without remembering where files are stored.
+
+**Our Mission**: To provide visual intelligence that empowers all stakeholders - designers, sales teams, and decision makers - to find design assets instantly, so they can focus on what matters most - their core work. No more wasting hours searching through folders; let AI understand your visual needs.
 
 Built with Go, Python, and Next.js, PetaVision delivers enterprise-grade performance for petabyte-scale image management.
+
+
+
 
 ## Features
 
