@@ -1,56 +1,52 @@
-# Makefile to check for conda, setup environment, and activate it
+# Makefile for PetaVision
+# Python deps are managed by uv (https://docs.astral.sh/uv/).
+# Go deps via `go mod`. Node deps inside web/.
 
-# Check if conda is installed
-CONDA_EXISTS := $(shell command -v conda 2> /dev/null)
+UV := $(shell command -v uv 2> /dev/null)
 
-# Environment file
-ENV_FILE := environment.yml
+# ---- Python (uv) ----
 
-# Conda environment name
-ENV_NAME := $(shell awk '/name:/ {print $$2}' $(ENV_FILE))
-
-# Target: Check if conda exists
-check_conda:
-ifndef CONDA_EXISTS
-	$(error "conda is not installed. Please install conda.")
+check_uv:
+ifndef UV
+	$(error "uv is not installed. Install: curl -LsSf https://astral.sh/uv/install.sh | sh")
 endif
-	@echo "conda is installed."
+	@uv --version
 
-# Target: Setup conda environment from environment.yml
-setup_env: check_conda
-	@if conda info --envs | grep -q $(ENV_NAME); then \
-		echo "Updating existing conda environment: $(ENV_NAME)"; \
-		conda env update --file $(ENV_FILE); \
-	else \
-		echo "Creating new conda environment: $(ENV_NAME)"; \
-		conda env create --file $(ENV_FILE); \
-	fi
+# Create / sync the Python environment from pyproject.toml (and uv.lock if present).
+# Includes the `dev` extra so tests (pytest, milvus-lite, etc.) work out of the box.
+setup_env: check_uv
+	uv sync --extra dev
 
-activate_env:
-	@if [ -z "$$(conda info --env | grep '^$(ENV_NAME) *')" ]; then \
-		conda activate $(ENV_NAME); \
-		echo "Activated conda environment: $(ENV_NAME)"; \
-	else \
-		echo "Conda environment $(ENV_NAME) is already active."; \
-	fi
+# Add a new dependency: `make add PKG=requests`
+add: check_uv
+	uv add $(PKG)
 
-update_env:
-	conda env export | grep -v "^prefix: " > environment.yml
+# Run a command inside the uv-managed venv: `make run CMD="python scripts/api.py"`
+run: check_uv
+	uv run $(CMD)
+
+# ---- Go ----
 
 tidy:
 	go mod tidy
 
-# Target: Default target to setup and activate environment
-all: tidy setup_env activate_env
-	@echo "Environment setup and activation complete."
+build:
+	go build -o sync-engine main.go
 
-# Target: Help
+# ---- Combined ----
+
+# Default: just the Python env. Run `make tidy` separately if you also need Go.
+all: setup_env
+	@echo "Python (uv) environment ready. For Go: 'make tidy' or 'make build'."
+
 help:
 	@echo "Available targets:"
-	@echo "  check_conda   - Check if conda is installed"
-	@echo "  setup_env     - Setup conda environment from environment.yml"
-	@echo "  activate_env  - Activate conda environment if not already activated"
-	@echo "  all           - Setup and activate environment"
-	@echo "  help          - Show this help message"
+	@echo "  check_uv      - Verify uv is installed"
+	@echo "  setup_env     - uv sync the Python environment"
+	@echo "  add PKG=...   - Add a Python dependency via uv"
+	@echo "  run CMD=...   - Run a command inside the uv venv"
+	@echo "  tidy          - go mod tidy (requires Go)"
+	@echo "  build         - Build the Go sync-engine binary (requires Go)"
+	@echo "  all           - Sync the Python env (default)"
 
-.PHONY: check_conda setup_env activate_env all help
+.PHONY: check_uv setup_env add run tidy build all help

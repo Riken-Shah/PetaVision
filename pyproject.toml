@@ -1,0 +1,69 @@
+[project]
+name = "petavision"
+version = "0.1.0"
+description = "Petabyte-scale NAS image indexing & AI search (Python AI/ML pipeline)"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+
+dependencies = [
+    # Web API
+    "flask>=3.0",
+    "flask-cors>=4.0",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+
+    # Imaging
+    "pillow>=10.2",
+    "pyvips>=2.2",
+    "opencv-python>=4.9",
+
+    # Numerics
+    "numpy>=1.26,<2",
+    "pandas>=2.1",
+    "scipy>=1.11",
+    "scikit-learn>=1.4",
+    "cvxopt>=1.3",
+
+    # CLIP / ML
+    "torch>=2.2",
+    "torchvision>=0.17",
+    "open-clip-torch>=2.24",
+    "transformers>=4.32",
+    "tqdm>=4.65",
+
+    # Vector DB
+    # 2.4.2+ required so `milvus-lite` (used in tests) is supported.
+    # Wire-compatible with Milvus 2.3 servers, so the Go side (sdk-go v2.3.5) stays as-is.
+    "pymilvus>=2.4.2,<2.5",
+
+    # Firebase (consumer queue)
+    "firebase-admin>=6.4",
+
+    # Layering (fast_layer_decompostion uses these)
+    "guided-filter-pytorch>=3.7.5",
+    "pyopencl>=2024.1",
+    "cython>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.4",
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+    # In-process Milvus for tests (no Docker, no daemon). macOS arm64/x86_64 + Linux.
+    "milvus-lite>=2.4.10",
+]
+
+[tool.uv]
+# Pin compiled wheels for reproducibility once `uv lock` is run.
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["scripts/tests"]
+markers = [
+    "integration: tests that exercise milvus-lite or other heavyweight deps",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"

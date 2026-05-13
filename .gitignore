@@ -3,6 +3,11 @@
 # Modal cache
 .cache
 
+# uv / Python
+.venv/
+__pycache__/
+*.pyc
+
 # Config File
 config.ini
 
