@@ -20,7 +20,7 @@ EXTENSIONS_LIST = ["*.jpeg"]
 
 class SyncDir:
     def __init__(self, thumbnail_dir, embedding_folder, json_file, cache_dir, collection_name, milvus_uri, milvus_username,
-                 milvus_password):
+                 milvus_password, milvus_token=None):
         self.embedding_folder = Path(embedding_folder)
         # Cache Dir for models
         self.cache_dir = cache_dir
@@ -51,7 +51,8 @@ class SyncDir:
                                       device=self.device)
 
         # VectorDB which acts as the index for the images
-        self.milvus = Milvus(milvus_uri, milvus_username, milvus_password, collection_name=collection_name)
+        self.milvus = Milvus(milvus_uri, milvus_username, milvus_password,
+                             collection_name=collection_name, token=milvus_token)
 
     def _rglob_extension(self, extension):
         for fname in chain.from_iterable(
@@ -147,10 +148,13 @@ if __name__ == '__main__':
 
     start = timeit.default_timer()
 
-    syncEngine = SyncDir("",args.emb_dir, args.json_file,  collection_name=args.collection_name,
+    # Milvus token (Zilliz Cloud) is intentionally not a CLI arg — pass via
+    # MILVUS_TOKEN env var so it never lands in shell history / process listings.
+    syncEngine = SyncDir("", args.emb_dir, args.json_file, collection_name=args.collection_name,
                          cache_dir=args.cache_dir,
                          milvus_uri=args.milvus_uri, milvus_username=args.milvus_username,
-                         milvus_password=args.milvus_password)
+                         milvus_password=args.milvus_password,
+                         milvus_token=os.environ.get("MILVUS_TOKEN"))
     syncEngine.add_bulk()
     stop = timeit.default_timer()
     total_time = stop - start

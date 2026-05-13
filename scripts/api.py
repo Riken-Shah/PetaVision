@@ -1,4 +1,5 @@
 import configparser
+import os
 from io import BytesIO
 from pathlib import Path, PurePosixPath
 import numpy as np
@@ -155,6 +156,10 @@ def add_routes(app):
 
 if __name__ == '__main__':
     cache_dir = config['server']['cache_dir']
+    # Token: env var first, then optional config.ini value. Never hardcoded.
+    milvus_token = os.environ.get("MILVUS_TOKEN") or (
+        config['milvus']['token'] if config.has_option('milvus', 'token') else None
+    )
     SYNC_ENGINE = SyncDir(
         config['server']['thumbnail_dir'],
         collection_name="mvp0",
@@ -162,6 +167,7 @@ if __name__ == '__main__':
         milvus_uri=config['milvus']['uri'],
         milvus_username=config['milvus']['user'],
         milvus_password=config['milvus']['password'],
+        milvus_token=milvus_token,
         embedding_folder=config['server']['emb_dir'],
         json_file=config['server']['json_file']
     )

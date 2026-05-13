@@ -1,17 +1,22 @@
 import configparser
+import os
 
 from pymilvus import Collection, DataType, FieldSchema, CollectionSchema
 from pymilvus import connections, utility
 
 
 class Milvus:
-    def __init__(self, milvus_uri, user, password, collection_name):
-        connections.connect("default",
-                            uri=milvus_uri,
-                            token="95d55a77bc7de1d9734368f7272f8d5db5672cbba7b62536d572e37c0ac9acad029c228e3ed4a5db0c1e6aafec399f730cc0fe8c",
-                            # user=user,
-                            # password=password)
-                            )
+    def __init__(self, milvus_uri, user, password, collection_name, token=None):
+        # Token (Zilliz Cloud bearer) is sourced from the caller or MILVUS_TOKEN
+        # env var. Never hardcoded.
+        resolved_token = token or os.environ.get("MILVUS_TOKEN")
+        connect_kwargs = {"uri": milvus_uri}
+        if resolved_token:
+            connect_kwargs["token"] = resolved_token
+        elif user or password:
+            connect_kwargs["user"] = user
+            connect_kwargs["password"] = password
+        connections.connect("default", **connect_kwargs)
 
         self.DIM = 512  # dimension of vector
         self._collection = None
